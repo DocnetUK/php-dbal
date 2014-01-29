@@ -38,11 +38,7 @@ class Config
     public function __construct($arr_cfg = NULL)
     {
         $this->arr_cfg = array_merge(array(
-            'host' => '127.0.0.1',
-            'user' => 'root',
-            'pass' => 'password',
-            'db' => 'dbTest',
-            'result_class' => '\\Docnet\\DB\\Model'
+            'live' => TRUE
         ), (array)$arr_cfg);
     }
 
