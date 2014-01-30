@@ -72,6 +72,7 @@ class DB
      * not going to support them here. If we're already in a transaction,
      * silently ignore the request.
      *
+     * @returns \Docnet\Db
      * @throws \Exception if mysqli::begin_transaction() returned false
      */
     public function begin() {
@@ -84,6 +85,7 @@ class DB
         } else {
             $this->bol_in_transaction = true;
         }
+        return $this;
     }
 
     /**
@@ -93,6 +95,7 @@ class DB
      *
      * @todo Are we scared that bol_in_transaction might get out of sync and
      * prevent legit commits?
+     * @return \Docnet\DB
      * @throws \Exception if we're not in a transaction
      * @throws \Exception if the driver reports that the commit failed
      */
@@ -103,10 +106,12 @@ class DB
         if (!$this->obj_db->commit()) {
             throw new \Exception("MySQL failed to commit the transaction");
         }
+        return $this;
     }
 
     /**
      * Rollback a transaction.
+     * @returns \Docnet\DB
      * @throws \Exception if we're not in a transaction
      * @throws \Exception if the driver reports that the rollback failed
      */
@@ -117,6 +122,7 @@ class DB
         if (!$this->obj_db->rollback()) {
             throw new \Exception("MySQL failed to rollback the transaction");
         }
+        return $this;
     }
 
 
