@@ -1,13 +1,19 @@
 {
-    "name": "docnetuk/php-db-wip",
-    "description": "A library which wraps mysqli into a fluent, easy-to-use classes.",
+    "name": "docnet/php-db-wip",
+    "description": "A library which wraps mysqli into a fluent, easy-to-use set of classes.",
     "authors": [
         {
-            "name": "DocNet",
+            "name": "Docnet",
             "email": "hello@docnet.nu"
         }
     ],
     "require": {
-
-    }
+        "php": ">=5.3.0"
+    },
+    "autoload": {
+        "classmap": [
+            "src/"
+        ]
+    },
+    "include-path": ["src/"]
 }
