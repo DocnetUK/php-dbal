@@ -49,6 +49,12 @@ class DB
     private $int_fetch_mode = NULL;
 
     /**
+     * The result class into which results will be hydrated
+     * @var string
+     */
+    private $str_result_class;
+
+    /**
      * @var bool
      */
     private $bol_in_transaction = false;
@@ -64,6 +70,28 @@ class DB
         if ($this->obj_db->connect_error) {
             throw new \Exception('Connect Error (' . $this->obj_db->connect_errno . ') ' . $this->obj_db->connect_error);
         }
+    }
+
+    /**
+     * Set the object class to be used in all future queries on this object.
+     *
+     * @param $str_result_class
+     * @return \Docnet\Db
+     * @throws \Exception
+     */
+    public function setResultClass($str_result_class) {
+        if (strlen($str_result_class) == 0) {
+            $this->str_result_class = null;
+            return;
+        }
+
+        if (!class_exists($str_result_class)) {
+            throw new \Exception("Result class '$str_result_class' does not exist");
+        } else {
+            $this->str_result_class = $str_result_class;
+        }
+
+        return $this;
     }
 
     /**
@@ -131,12 +159,14 @@ class DB
      *
      * @param String $str_sql
      * @param Array $arr_params
+     * @param String $str_result_class manually override result class (just for
+     * this query)
      * @return Array|NULL
      */
-    public function fetchAll($str_sql, $arr_params = NULL)
+    public function fetchAll($str_sql, $arr_params = NULL, $str_result_class = NULL)
     {
         $this->int_fetch_mode = self::FETCH_MODE_ALL;
-        return $this->delegateFetch($str_sql, $arr_params);
+        return $this->delegateFetch($str_sql, $arr_params, $str_result_class);
     }
 
     /**
@@ -144,12 +174,14 @@ class DB
      *
      * @param String $str_sql
      * @param Array $arr_params
+     * @param String $str_result_class manually override result class (just for
+     * this query)
      * @return Array|NULL
      */
-    public function fetchOne($str_sql, $arr_params = NULL)
+    public function fetchOne($str_sql, $arr_params = NULL, $str_result_class = NULL)
     {
         $this->int_fetch_mode = self::FETCH_MODE_ONE;
-        return $this->delegateFetch($str_sql, $arr_params);
+        return $this->delegateFetch($str_sql, $arr_params, $str_result_class);
     }
 
     /**
@@ -157,18 +189,30 @@ class DB
      *
      * @param $str_sql
      * @param null $arr_params
+     * @param String $str_result_class
      * @return Array|NULL|void
      */
-    private function delegateFetch($str_sql, $arr_params = NULL)
+    private function delegateFetch($str_sql, $arr_params = NULL, $str_result_class = NULL)
     {
         if (NULL === $arr_params) {
             return $this->fetchDirect($str_sql);
         } else {
             $obj_stmt = new DB\Statement($this->obj_db);
+
+            // only use $this->str_result_class if $str_result_class is empty
+            if (!$str_result_class && $this->str_result_class) {
+                $obj_stmt->setResultClass($this->str_result_class);
+            }
+
+            // always use $str_result_class if it's supplied
+            if ($str_result_class) {
+                $obj_stmt->setResultClass($this->str_result_class);
+            }
+
             if ($this->int_fetch_mode === self::FETCH_MODE_ONE) {
-                return $obj_stmt->fetchOne($str_sql, $arr_params);
+                return $obj_stmt->fetchOne($str_sql, $arr_params, $str_result_class);
             } else {
-                return $obj_stmt->fetchAll($str_sql, $arr_params);
+                return $obj_stmt->fetchAll($str_sql, $arr_params, $str_result_class);
             }
         }
     }
@@ -183,12 +227,12 @@ class DB
     {
         if ($obj_result = $this->obj_db->query($str_sql)) {
             if ($this->int_fetch_mode === self::FETCH_MODE_ONE) {
-                $obj_row = $obj_result->fetch_object('\Docnet\DB\Model');
+                $obj_row = $obj_result->fetch_object($this->str_result_class);
                 $obj_result->free();
                 return $obj_row;
             } else {
                 $arr_data = array();
-                while ($obj_row = $obj_result->fetch_object('\Docnet\DB\Model')) {
+                while ($obj_row = $obj_result->fetch_object($this->str_result_class)) {
                     $arr_data[] = $obj_row;
                 }
                 $obj_result->free();
@@ -207,6 +251,9 @@ class DB
     public function prepare($str_sql)
     {
         $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
+        if ($this->str_result_class) {
+            $obj_stmt->setResultClass($this->str_result_class);
+        }
         return $obj_stmt;
     }
 
