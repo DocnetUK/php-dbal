@@ -66,7 +66,7 @@ class Statement
     private $obj_result = NULL;
 
     /**
-     * @var null
+     * @var \mysqli_stmt
      */
     private $obj_stmt = NULL;
 
@@ -137,20 +137,40 @@ class Statement
             // If our internal state is 'BOUND' then we need to do the mysqli binding next...
             if($this->int_state === self::STATE_BOUND) {
                 $str_sql = preg_replace_callback("/\?(\w+)/", array($this, 'replaceTypedParams'), $this->str_prepare_sql);
-                $this->obj_stmt = $this->obj_db->prepare($str_sql);
+                $this->obj_stmt = $this->prepare($str_sql);
                 $this->bindParameters();
             }
         } else {
             // Got an SQL string and some UNNAMED, UNTYPED params
             $this->reset();
             $this->processUntypedParams($arr_params);
-            $this->obj_stmt = $this->obj_db->prepare($str_sql);
+            $this->obj_stmt = $this->prepare($str_sql);
             $this->bindParameters();
         }
         if($this->execute()) {
             return $this->fetch();
         }
         return NULL;
+    }
+
+    /**
+     * Common prepare method which throws an exception
+     * @param string $str_sql
+     * @return \mysqli_stmt
+     * @throws \Exception if the call to mysqli::prepare failed
+     */
+    protected function prepare($str_sql) {
+        $obj_stmt = $this->obj_db->prepare($str_sql);
+        if (!$obj_stmt) {
+            throw new \Exception(
+                sprintf(
+                    'Error preparing statement - Code: %d, Message: "%s"',
+                    $this->obj_db->errno,
+                    $this->obj_db->error
+                )
+            );
+        }
+        return $obj_stmt;
     }
 
     /**
