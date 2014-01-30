@@ -134,7 +134,6 @@ class DB
         if (!$this->obj_db->commit()) {
             throw new \Exception("MySQL failed to commit the transaction");
         }
-        return $this;
     }
 
     /**
