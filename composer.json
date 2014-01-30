@@ -1,0 +1,13 @@
+{
+    "name": "docnetuk/php-db-wip",
+    "description": "A library which wraps mysqli into a fluent, easy-to-use classes.",
+    "authors": [
+        {
+            "name": "DocNet",
+            "email": "hello@docnet.nu"
+        }
+    ],
+    "require": {
+
+    }
+}
