@@ -90,6 +90,14 @@ class Statement
      */
     protected $arr_bind_params = array();
 
+
+    /**
+     * The class into which results will be hydrated (presumably triggering
+     * the magic __set method in the process)
+     * @var string
+     */
+    protected $str_result_class = NULL;
+
     /**
      * If SQL is passed, store for later preparation
      */
@@ -104,24 +112,40 @@ class Statement
     }
 
     /**
-     * Execute a query, return the first result
+     * Execute a query, return the first result. If $str_str_result_class is
+     * set, the result class object is set for this statement, so all further
+     * executions of a prepared statement would result in the same behaviour.
      *
      * @param String $str_sql
      * @param Array $arr_params
+     * @param String $str_result_class
      * @return Array|NULL
      */
-    public function fetchOne($str_sql = NULL, $arr_params = NULL)
+    public function fetchOne($str_sql = NULL, $arr_params = NULL, $str_result_class = NULL)
     {
         $this->int_fetch_mode = \Docnet\DB::FETCH_MODE_ONE;
+        if ($str_result_class) {
+            $this->setResultClass($str_result_class);
+        }
         return $this->process($str_sql, $arr_params);
     }
 
     /**
-     * Execute a query, return ALL the results
+     * Execute a query, return ALL the results. If $str_str_result_class is
+     * set, the result class object is set for this statement, so all further
+     * executions of a prepared statement would result in the same behaviour.
+     *
+     * @param String $str_sql
+     * @param Array $arr_params
+     * @param String $str_result_class
+     * @return array|NULL
      */
-    public function fetchAll($str_sql = NULL, $arr_params = NULL)
+    public function fetchAll($str_sql = NULL, $arr_params = NULL, $str_result_class = NULL)
     {
         $this->int_fetch_mode = \Docnet\DB::FETCH_MODE_ALL;
+        if ($str_result_class) {
+            $this->setResultClass($str_result_class);
+        }
         return $this->process($str_sql, $arr_params);
     }
 
@@ -196,13 +220,13 @@ class Statement
         /** @var  $obj_result \mysqli_result */
         $obj_result = $this->obj_stmt->get_result();
         if ($this->int_fetch_mode === \Docnet\DB::FETCH_MODE_ONE) {
-            $obj_row = $obj_result->fetch_object('\Docnet\DB\Model');
+            $obj_row = $obj_result->fetch_object($this->str_result_class);
             $obj_result->free();
             $this->obj_stmt->close();
             return $obj_row;
         } else {
             $arr_data = array();
-            while ($obj_row = $obj_result->fetch_object('\Docnet\DB\Model')) {
+            while ($obj_row = $obj_result->fetch_object($this->str_result_class)) {
                 $arr_data[] = $obj_row;
             }
             $obj_result->free();
@@ -234,6 +258,29 @@ class Statement
             }
             $this->arr_bind_params[] = & $this->arr_raw_params[$int_key];
         }
+    }
+
+    /**
+     * Change the class, on a per statement/query level, into which SELECT
+     * results are hydrated.
+     *
+     * @param $str_result_class the target class
+     * @return \Docnet\Db
+     * @todo this is C+P'd from DB. Worth moving into DB::validateResultClass?
+     */
+    public function setResultClass($str_result_class) {
+        if (strlen($str_result_class) == 0) {
+            $this->str_result_class = null;
+            return;
+        }
+
+        if (!class_exists($str_result_class)) {
+            throw new \Exception("Model class '$str_result_class' does not exist");
+        } else {
+            $this->str_result_class = $str_result_class;
+        }
+
+        return $this;
     }
 
     /**
