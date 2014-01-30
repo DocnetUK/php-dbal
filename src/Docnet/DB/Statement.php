@@ -282,7 +282,7 @@ class Statement
      * results are hydrated.
      *
      * @param string $str_result_class the target class
-     * @return \Docnet\DB
+     * @return $this
      * @throws \Exception
      */
     public function setResultClass($str_result_class = NULL) {
