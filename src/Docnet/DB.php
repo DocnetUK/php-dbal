@@ -49,6 +49,11 @@ class DB
     private $int_fetch_mode = NULL;
 
     /**
+     * @var bool
+     */
+    private $bol_in_transaction = false;
+
+    /**
      * Connect on construction
      *
      * @throws \Exception
@@ -60,6 +65,66 @@ class DB
             throw new \Exception('Connect Error (' . $this->obj_db->connect_errno . ') ' . $this->obj_db->connect_error);
         }
     }
+
+    /**
+     * Start a transaction. While MySQL does support "Nested Transactions" of
+     * sorts (see http://dev.mysql.com/doc/refman/5.0/en/savepoint.html), we're
+     * not going to support them here. If we're already in a transaction,
+     * silently ignore the request.
+     *
+     * @returns \Docnet\Db
+     * @throws \Exception if mysqli::begin_transaction() returned false
+     */
+    public function begin() {
+        if ($this->bol_in_transaction) {
+            return;
+        }
+
+        if (!$this->obj_db->begin_transaction()) {
+            throw new \Exception("Failed to start a transaction");
+        } else {
+            $this->bol_in_transaction = true;
+        }
+        return $this;
+    }
+
+    /**
+     * Commit a transaction. If we're not in transaction, throw an exception.
+     * It's important that the calling code knows it's not in a transaction if
+     * the deveoper assumed that they were.
+     *
+     * @todo Are we scared that bol_in_transaction might get out of sync and
+     * prevent legit commits?
+     * @return \Docnet\DB
+     * @throws \Exception if we're not in a transaction
+     * @throws \Exception if the driver reports that the commit failed
+     */
+    public function commit() {
+        if (!$this->bol_in_transaction) {
+            throw new \Exception("Not in a transaction, can't commit");
+        }
+        if (!$this->obj_db->commit()) {
+            throw new \Exception("MySQL failed to commit the transaction");
+        }
+        return $this;
+    }
+
+    /**
+     * Rollback a transaction.
+     * @returns \Docnet\DB
+     * @throws \Exception if we're not in a transaction
+     * @throws \Exception if the driver reports that the rollback failed
+     */
+    public function rollback() {
+        if (!$this->bol_in_transaction) {
+            throw new \Exception("Not in a transaction, can't rollback");
+        }
+        if (!$this->obj_db->rollback()) {
+            throw new \Exception("MySQL failed to rollback the transaction");
+        }
+        return $this;
+    }
+
 
     /**
      * Execute a query, return the results as an array
