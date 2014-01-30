@@ -66,13 +66,12 @@ class DB
     public function begin()
     {
         if ($this->bol_in_transaction) {
-            return;
+            return $this;
         }
         if (!$this->obj_db->begin_transaction()) {
             throw new \Exception("Failed to start a transaction");
-        } else {
-            $this->bol_in_transaction = true;
         }
+        $this->bol_in_transaction = true;
         return $this;
     }
 
@@ -171,7 +170,7 @@ class DB
      * Set up a Statement
      *
      * @param $str_sql
-     * @return $this
+     * @return \Docnet\DB\Statement
      * @throws \InvalidArgumentException
      */
     public function prepare($str_sql = NULL)
@@ -186,8 +185,8 @@ class DB
     /**
      * Escape a string - utility method. Prefer using prepare/bind/fetch
      *
-     * @param type $str
-     * @return type
+     * @param string $str
+     * @return string
      */
     public function escape($str)
     {
