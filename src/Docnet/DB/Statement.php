@@ -159,16 +159,19 @@ class Statement
     private function process($arr_params = NULL)
     {
         if (NULL === $arr_params) {
-            // No parameters, so EITHER
-            // a) the query does not require params (e.g. "SELECT * from tbl")
-            // b) the NAMED parameters have already been bound to this object
-            if ($this->int_state === self::STATE_BOUND) {
-                $str_sql = preg_replace_callback("/\?(\w+)/", array($this, 'replaceTypedParams'), $this->str_prepare_sql);
-                $this->obj_stmt = $this->prepare($str_sql);
-                $this->bindParameters();
-            } elseif ($this->int_state === self::STATE_PREPARED) {
-                $this->obj_stmt = $this->prepare($this->str_prepare_sql);
-                $this->str_prepare_sql = NULL;
+            if (NULL !== $this->str_prepare_sql) {
+                // No parameters, so EITHER
+                // a) the query does not require params (e.g. "SELECT * from tbl")
+                // b) the NAMED parameters have already been bound to this object
+                if ($this->int_state === self::STATE_BOUND) {
+                    $str_sql = preg_replace_callback("/\?(\w+)/", array($this, 'replaceTypedParams'), $this->str_prepare_sql);
+                    $this->str_prepare_sql = NULL;
+                    $this->obj_stmt = $this->prepare($str_sql);
+                    $this->bindParameters();
+                } elseif ($this->int_state === self::STATE_PREPARED) {
+                    $this->obj_stmt = $this->prepare($this->str_prepare_sql);
+                    $this->str_prepare_sql = NULL;
+                }
             }
         } else {
             // The parameters passed into this method SHOULD NOT be named, so bind them as such
@@ -222,7 +225,6 @@ class Statement
                 $obj_row = $obj_result->fetch_object();
             }
             $obj_result->free();
-            $this->obj_stmt->close();
             return $obj_row;
         } else {
             $arr_data = array();
@@ -236,7 +238,6 @@ class Statement
                 }
             }
             $obj_result->free();
-            $this->obj_stmt->close();
             return $arr_data;
         }
     }
@@ -418,4 +419,9 @@ class Statement
         $this->arr_bind_params = array();
     }
 
+    public function __destruct() {
+        if ($this->obj_stmt) {
+            $this->obj_stmt->close();
+        }
+    }
 }
