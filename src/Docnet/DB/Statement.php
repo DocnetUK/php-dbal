@@ -110,7 +110,7 @@ class Statement
     public function __construct(\mysqli $obj_db, $str_sql = NULL, $str_result_class = NULL)
     {
         $this->obj_db = $obj_db;
-        if(NULL !== $str_sql) {
+        if (NULL !== $str_sql) {
             $this->str_prepare_sql = $str_sql;
             $this->int_state = self::STATE_PREPARED;
         }
@@ -126,7 +126,7 @@ class Statement
      */
     public function fetchOne($str_sql = NULL, $arr_params = NULL)
     {
-        if($this->process($str_sql, $arr_params)) {
+        if ($this->process($str_sql, $arr_params)) {
             return $this->fetch(DB::FETCH_MODE_ONE);
         }
         return NULL;
@@ -141,7 +141,7 @@ class Statement
      */
     public function fetchAll($str_sql = NULL, $arr_params = NULL)
     {
-        if($this->process($str_sql, $arr_params)) {
+        if ($this->process($str_sql, $arr_params)) {
             return $this->fetch(DB::FETCH_MODE_ALL);
         }
         return NULL;
@@ -161,24 +161,25 @@ class Statement
      * @param null $arr_params
      * @return array|null|object
      */
-    private function process($str_sql = NULL, $arr_params = NULL) {
-        if(NULL !== $str_sql) {
+    private function process($str_sql = NULL, $arr_params = NULL)
+    {
+        if (NULL !== $str_sql) {
             // The SQL passed into this method CANNOT contain named parameters
             // If we're being given SQL at this stage, reset & prepare
             $this->reset();
             $this->obj_stmt = $this->prepare($str_sql);
         }
-        if(NULL === $arr_params) {
+        if (NULL === $arr_params) {
             // No parameters, so EITHER
             // a) the query does not require params (e.g. "SELECT * from tbl")
             // b) the NAMED parameters have already been bound to this object
-            if($this->str_prepare_sql !== NULL) {
-                if($this->int_state === self::STATE_BOUND) {
+            if ($this->str_prepare_sql !== NULL) {
+                if ($this->int_state === self::STATE_BOUND) {
                     $str_sql = preg_replace_callback("/\?(\w+)/", array($this, 'replaceTypedParams'), $this->str_prepare_sql);
                     $this->str_prepare_sql = NULL;
                     $this->obj_stmt = $this->prepare($str_sql);
                     $this->bindParameters();
-                } elseif($this->int_state === self::STATE_PREPARED) {
+                } elseif ($this->int_state === self::STATE_PREPARED) {
                     $this->obj_stmt = $this->prepare($this->str_prepare_sql);
                     $this->str_prepare_sql = NULL;
                 }
@@ -199,7 +200,8 @@ class Statement
      * @return \mysqli_stmt
      * @throws \Exception if the call to mysqli::prepare failed
      */
-    private function prepare($str_sql) {
+    private function prepare($str_sql)
+    {
         $obj_stmt = $this->obj_db->prepare($str_sql);
         if (!$obj_stmt) {
             throw new \Exception(
@@ -227,7 +229,7 @@ class Statement
         /** @var  $obj_result \mysqli_result */
         $obj_result = $this->obj_stmt->get_result();
         if ($int_fetch_mode === DB::FETCH_MODE_ONE) {
-            if($this->str_result_class) {
+            if ($this->str_result_class) {
                 $obj_row = $obj_result->fetch_object($this->str_result_class);
             } else {
                 $obj_row = $obj_result->fetch_object();
@@ -237,7 +239,7 @@ class Statement
             return $obj_row;
         } else {
             $arr_data = array();
-            if($this->str_result_class) {
+            if ($this->str_result_class) {
                 while ($obj_row = $obj_result->fetch_object($this->str_result_class)) {
                     $arr_data[] = $obj_row;
                 }
@@ -285,13 +287,13 @@ class Statement
      * @return $this
      * @throws \Exception
      */
-    public function setResultClass($str_result_class = NULL) {
-        if(NULL === $str_result_class || class_exists($str_result_class)){
+    public function setResultClass($str_result_class = NULL)
+    {
+        if (NULL === $str_result_class || class_exists($str_result_class)) {
             $this->str_result_class = $str_result_class;
-        } else {
-            throw new \Exception("Result class does not exist: " . $str_result_class);
+            return $this;
         }
-        return $this;
+        throw new \Exception("Result class does not exist: " . $str_result_class);
     }
 
     /**
@@ -387,10 +389,10 @@ class Statement
     private function replaceTypedParams($arr_matches)
     {
         $str_key = $arr_matches[1];
-        if(isset($this->arr_raw_params[$str_key])) {
+        if (isset($this->arr_raw_params[$str_key])) {
 
             // Hard Typed or prefixed?
-            if(isset($this->arr_raw_types[$str_key])) {
+            if (isset($this->arr_raw_types[$str_key])) {
                 $this->str_bind_string .= $this->arr_raw_types[$str_key];
             } else {
                 // String array access for sped
