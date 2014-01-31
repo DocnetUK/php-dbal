@@ -124,9 +124,9 @@ class DB
      * @return integer rows affected
      * @see update()
      */
-    public function insert($str_sql, $arr_params) {
-        $obj_stmt = new DB\Statement($this->obj_db);
-        return $obj_stmt->insert($str_sql, $arr_params);
+    public function insert($arr_params) {
+        $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
+        return $obj_stmt->insert($arr_params);
     }
 
     /**
@@ -138,8 +138,8 @@ class DB
      * @param $arr_params
      */
     public function update($str_sql, $arr_params) {
-        $obj_stmt = new DB\Statement($this->obj_db);
-        return $obj_stmt->update($str_sql, $arr_params);
+        $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
+        return $obj_stmt->update($arr_params);
     }
 
     /**
@@ -150,8 +150,8 @@ class DB
      * @param $arr_params
      */
     public function delete($str_sql, $arr_params) {
-        $obj_stmt = new DB\Statement($this->obj_db);
-        return $obj_stmt->delete($str_sql, $arr_params);
+        $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
+        return $obj_stmt->delete($arr_params);
     }
 
     /**

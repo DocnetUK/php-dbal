@@ -144,16 +144,34 @@ class Statement
         return NULL;
     }
 
-    public function update($str_sql = NULL, $arr_params = NULL) {
-        return $this->process($str_sql, $arr_params, true);
+    /**
+     * Execute an update statement
+     *
+     * @param array $arr_params
+     * @return array|null|object
+     */
+    public function update(array $arr_params = NULL) {
+        return $this->process($arr_params);
     }
 
-    public function insert($str_sql = NULL, $arr_params = NULL) {
-        return $this->process($str_sql, $arr_params, true);
+    /**
+     * Execute an insert statement
+     *
+     * @param array $arr_params
+     * @return array|null|object
+     */
+    public function insert(array $arr_params = NULL) {
+        return $this->process($arr_params);
     }
 
-    public function delete($str_sql = NULL, $arr_params = NULL) {
-        return $this->process($str_sql, $arr_params, true);
+    /**
+     * Execute a delete statement
+     *
+     * @param array $arr_params
+     * @return array|null|object
+     */
+    public function delete(array $arr_params = NULL) {
+        return $this->process($arr_params);
     }
 
     /**
