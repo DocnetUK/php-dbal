@@ -125,14 +125,27 @@ class Statement
         return $this->process($str_sql, $arr_params);
     }
 
+    public function update($str_sql = NULL, $arr_params = NULL) {
+        return $this->process($str_sql, $arr_params, true);
+    }
+
+    public function insert($str_sql = NULL, $arr_params = NULL) {
+        return $this->process($str_sql, $arr_params, true);
+    }
+
+    public function delete($str_sql = NULL, $arr_params = NULL) {
+        return $this->process($str_sql, $arr_params, true);
+    }
+
     /**
      * Bind (if required), Execute, Fetch
      *
      * @param null $str_sql
      * @param null $arr_params
+     * @param bool $bol_is_dml is the query is a Data Modification Language query?
      * @return array|null|object
      */
-    private function process($str_sql = NULL, $arr_params = NULL) {
+    private function process($str_sql = NULL, $arr_params = NULL, $bol_is_dml = false) {
         if (NULL === $str_sql && NULL === $arr_params) {
             // If our internal state is 'BOUND' then we need to do the mysqli binding next...
             if($this->int_state === self::STATE_BOUND) {
@@ -147,6 +160,12 @@ class Statement
             $this->obj_stmt = $this->prepare($str_sql);
             $this->bindParameters();
         }
+
+        if ($bol_is_dml) {
+            $this->execute();
+            return $this->obj_stmt->affected_rows;
+        }
+
         if($this->execute()) {
             return $this->fetch();
         }

@@ -153,6 +153,44 @@ class DB
     }
 
     /**
+     * Delegate to Statement::insert()
+     *
+     * @param $str_sql
+     * @param $arr_params
+     * @return integer rows affected
+     * @see update()
+     */
+    public function insert($str_sql, $arr_params) {
+        $obj_stmt = new DB\Statement($this->obj_db);
+        return $obj_stmt->insert($str_sql, $arr_params);
+    }
+
+    /**
+     * Delegate to the Statement::update() method. Worth intentionally keeping
+     * this level of indirection incase we want to change the behaviour of each
+     * DML query.
+     *
+     * @param $str_sql
+     * @param $arr_params
+     */
+    public function update($str_sql, $arr_params) {
+        $obj_stmt = new DB\Statement($this->obj_db);
+        return $obj_stmt->update($str_sql, $arr_params);
+    }
+
+    /**
+     * Delegate to the Statement::delete() method. See notes on indirection in
+     * DB::update().
+     *
+     * @param $str_sql
+     * @param $arr_params
+     */
+    public function delete($str_sql, $arr_params) {
+        $obj_stmt = new DB\Statement($this->obj_db);
+        return $obj_stmt->delete($str_sql, $arr_params);
+    }
+
+    /**
      * Direct or Statement
      *
      * @param $str_sql
