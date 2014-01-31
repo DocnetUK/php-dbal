@@ -121,12 +121,13 @@ class DB
      *
      * @param $str_sql
      * @param $arr_params
-     * @return integer rows affected
+     * @return integer Insert ID
      * @see update()
      */
-    public function insert($arr_params) {
+    public function insert($str_sql, $arr_params) {
         $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
-        return $obj_stmt->insert($arr_params);
+        $obj_stmt->insert($arr_params);
+        return $obj_stmt->getInsertId();
     }
 
     /**
@@ -136,10 +137,12 @@ class DB
      *
      * @param $str_sql
      * @param $arr_params
+     * @return int
      */
     public function update($str_sql, $arr_params) {
         $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
-        return $obj_stmt->update($arr_params);
+        $obj_stmt->update($arr_params);
+        return $obj_stmt->getAffectedRows();
     }
 
     /**
@@ -148,10 +151,12 @@ class DB
      *
      * @param $str_sql
      * @param $arr_params
+     * @return int
      */
     public function delete($str_sql, $arr_params) {
         $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
-        return $obj_stmt->delete($arr_params);
+        $obj_stmt->delete($arr_params);
+        return $obj_stmt->getAffectedRows();
     }
 
     /**

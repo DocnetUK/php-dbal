@@ -58,11 +58,6 @@ class Statement
     private $obj_db = NULL;
 
     /**
-     * @var \mysqli_result
-     */
-    private $obj_result = NULL;
-
-    /**
      * @var \mysqli_stmt
      */
     private $obj_stmt = NULL;
@@ -132,7 +127,6 @@ class Statement
     /**
      * Execute a query, return ALL the results.
      *
-     * @param String $str_sql
      * @param Array $arr_params
      * @return array|NULL
      */
@@ -150,7 +144,8 @@ class Statement
      * @param array $arr_params
      * @return array|null|object
      */
-    public function update(array $arr_params = NULL) {
+    public function update(array $arr_params = NULL)
+    {
         return $this->process($arr_params);
     }
 
@@ -160,7 +155,8 @@ class Statement
      * @param array $arr_params
      * @return array|null|object
      */
-    public function insert(array $arr_params = NULL) {
+    public function insert(array $arr_params = NULL)
+    {
         return $this->process($arr_params);
     }
 
@@ -170,7 +166,8 @@ class Statement
      * @param array $arr_params
      * @return array|null|object
      */
-    public function delete(array $arr_params = NULL) {
+    public function delete(array $arr_params = NULL)
+    {
         return $this->process($arr_params);
     }
 
@@ -179,7 +176,7 @@ class Statement
      *
      * 1. Prepare SQL
      * 2. (if provided) Bind untyped parameters
-     *    otherwise bind any typed parameters
+     *    otherwise bind any previously provided typed parameters
      * 3. Execute
      *
      * This method should now be usable by UPDATE/INSERT/DELETE
@@ -189,26 +186,18 @@ class Statement
      */
     private function process($arr_params = NULL)
     {
-        if (NULL !== $str_sql) {
-            // The SQL passed into this method CANNOT contain named parameters
-            // If we're being given SQL at this stage, reset & prepare
-            $this->reset();
-            $this->obj_stmt = $this->prepare($str_sql);
-        }
-        if (NULL === $arr_params) {
-            if (NULL !== $this->str_prepare_sql) {
-                // No parameters, so EITHER
-                // a) the query does not require params (e.g. "SELECT * from tbl")
-                // b) the NAMED parameters have already been bound to this object
-                if ($this->int_state === self::STATE_BOUND) {
-                    $str_sql = preg_replace_callback("/\?(\w+)/", array($this, 'replaceTypedParams'), $this->str_prepare_sql);
-                    $this->str_prepare_sql = NULL;
-                    $this->obj_stmt = $this->prepare($str_sql);
-                    $this->bindParameters();
-                } elseif ($this->int_state === self::STATE_PREPARED) {
-                    $this->obj_stmt = $this->prepare($this->str_prepare_sql);
-                    $this->str_prepare_sql = NULL;
-                }
+        if (NULL === $arr_params && NULL !== $this->str_prepare_sql) {
+            // No parameters, so EITHER
+            // a) the query does not require params (e.g. "SELECT * from tbl")
+            // b) the NAMED parameters have already been bound to this object
+            if ($this->int_state === self::STATE_BOUND) {
+                $str_sql = preg_replace_callback("/\?(\w+)/", array($this, 'replaceTypedParams'), $this->str_prepare_sql);
+                $this->str_prepare_sql = NULL;
+                $this->obj_stmt = $this->prepare($str_sql);
+                $this->bindParameters();
+            } elseif ($this->int_state === self::STATE_PREPARED) {
+                $this->obj_stmt = $this->prepare($this->str_prepare_sql);
+                $this->str_prepare_sql = NULL;
             }
         } else {
             // The parameters passed into this method SHOULD NOT be named, so bind them as such
@@ -322,9 +311,7 @@ class Statement
     }
 
     /**
-     * Bind a parameter, using Hungarian Notation or "Variable name hinting" for types
-     *
-     *  so stick to
+     * Bind a parameter, using Hungarian Notation or "Variable name hinting" for types so stick to
      *
      * int = i,
      * str = s,
@@ -403,6 +390,32 @@ class Statement
     }
 
     /**
+     * Get the ID from the last insert operation
+     *
+     * @return int|null
+     */
+    public function getInsertId()
+    {
+        if($this->obj_stmt) {
+            return $this->obj_stmt->insert_id;
+        }
+        return NULL;
+    }
+
+    /**
+     * Get the number of affected rows
+     *
+     * @return int|null
+     */
+    public function getAffectedRows()
+    {
+        if($this->obj_stmt) {
+            return $this->obj_stmt->affected_rows;
+        }
+        return NULL;
+    }
+
+    /**
      * Used by preg_replace_callback() to match named parameters
      *
      * Uses the first character of the named parameter string (unless Typed Binding has been used) to determine data type
@@ -443,20 +456,10 @@ class Statement
     }
 
     /**
-     * Reset the object
+     * Close any open statements on destruction
      */
-    private function reset()
+    public function __destruct()
     {
-        $this->int_state = self::STATE_RESET;
-        $this->obj_stmt = NULL;
-        $this->obj_result = NULL;
-        $this->str_prepare_sql = '';
-        $this->arr_raw_params = NULL;
-        $this->str_bind_string = '';
-        $this->arr_bind_params = array();
-    }
-
-    public function __destruct() {
         if ($this->obj_stmt) {
             $this->obj_stmt->close();
         }

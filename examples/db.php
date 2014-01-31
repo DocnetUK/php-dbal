@@ -16,7 +16,6 @@
  */
 
 require('../src/Docnet/DB.php');
-require('../src/Docnet/DB/Config.php');
 require('../src/Docnet/DB/Statement.php');
 require('../src/Docnet/DB/Model.php');
 
@@ -73,3 +72,14 @@ print_r($obj_db->prepare("SELECT * FROM tblServer")->fetchOne());
 
 echo "\nprepare()->setResultClass()->fetchOne();\n";
 print_r($obj_db->prepare("SELECT * FROM tblServer")->setResultClass('\\Docnet\\DB\\Model')->fetchOne());
+
+echo "\ninsert, select, delete\n";
+$int_id = $obj_db->insert("INSERT INTO tblServer VALUES (NULL, ?, ?, ?)", array('a', 'b', 'c'));
+echo "Inserted: {$int_id}\n";
+print_r(
+    $obj_db->fetchOne("SELECT * FROM tblServer WHERE intID = ?", array($int_id))
+);
+$int_rows = $obj_db->delete("DELETE FROM tblServer WHERE intID = ?", array($int_id));
+echo "Deleting: {$int_rows} rows\n";
+
+echo "\n\nDONE!!\n\n";
