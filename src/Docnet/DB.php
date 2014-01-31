@@ -217,7 +217,7 @@ class DB
     {
         if(NULL === $str_sql) {
             throw new \InvalidArgumentException("SQL required for prepare() call");
-                }
+        }
         $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
         return $obj_stmt;
     }
