@@ -60,12 +60,20 @@ Parameter binding deals with all escaping and quoting for you.
 Insert, update and delete operations (also called DML queries) work in just the
 same way as the ``fetch`` methods.
 ```php
+<?php
 $binds = array(1, 'foo');
 $db->insert("INSERT INTO tblData (intField1, vchField2) VALUES (?,?)", $binds);
 ```
 The number of affected rows is returned.
 
 ## Re-executing Prepared Statements ##
+```php
+<?php
+$binds = array(1, 'foo');
+$db->prepare("SELECT * FROM tblData WHERE intKey = ?id", $binds);
+$db->bindInt('id', 4)->fetchOne();
+$db->bindInt('id', 5)->fetchOne();
+```
 
 ## Arbitrary SQL ##
 
