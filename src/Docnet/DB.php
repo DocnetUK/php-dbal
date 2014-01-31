@@ -36,7 +36,6 @@ class DB
      */
     private $obj_db = NULL;
 
-
     /**
      * @var bool
      */
@@ -69,7 +68,6 @@ class DB
         if ($this->bol_in_transaction) {
             return $this;
         }
-
         if (!$this->obj_db->begin_transaction()) {
             throw new \Exception("Failed to start a transaction");
         }

@@ -51,7 +51,6 @@ class Statement
      */
     private $int_state = self::STATE_RESET;
 
-
     /**
      * @var \mysqli
      */
@@ -226,7 +225,6 @@ class Statement
         return $obj_stmt;
     }
 
-
     /**
      * Fetch ONE or ALL results
      *
@@ -253,8 +251,8 @@ class Statement
             $arr_data = array();
             if ($this->str_result_class) {
                 while ($obj_row = $obj_result->fetch_object($this->str_result_class)) {
-                $arr_data[] = $obj_row;
-            }
+                    $arr_data[] = $obj_row;
+                }
             } else {
                 while ($obj_row = $obj_result->fetch_object()) {
                     $arr_data[] = $obj_row;
