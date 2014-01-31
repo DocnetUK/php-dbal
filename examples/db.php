@@ -85,9 +85,24 @@ $int_rows = $obj_db->delete("DELETE FROM tblServer WHERE intID = ?", array($int_
 echo "Deleting: {$int_rows} rows\n";
 
 
-
+// Multi-execute fetch (as per README.md)
 $stmt = $obj_db->prepare("SELECT * FROM tblServer WHERE intID = ?id");
 print_r($stmt->bindInt('id', 1)->fetchOne());
 print_r($stmt->bindInt('id', 2)->fetchOne());
+
+// Multi-execute fetch (as per README.md)
+echo "\nMulti-insert, select, delete\n";
+$stmt = $obj_db->prepare("INSERT INTO tblServer VALUES (NULL, ?host, ?name, ?type)");
+$stmt
+    ->bindString('host', 'a')
+    ->bindString('name', 'b')
+    ->bindString('type', 'test')
+    ->insert();
+$stmt
+    ->bindString('host', 'c')
+    ->bindString('name', 'd')
+    ->insert();
+print_r($obj_db->fetchAll("SELECT * FROM tblServer"));
+print_r($obj_db->delete("DELETE FROM tblServer WHERE vchType = ?", array('test')));
 
 echo "\n\nDONE!!\n\n";
