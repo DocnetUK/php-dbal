@@ -185,11 +185,11 @@ class Statement
             // a) the query does not require params (e.g. "SELECT * from tbl")
             // b) the NAMED parameters have already been bound to this object
             if ($this->str_prepare_sql !== NULL) {
-            if($this->int_state === self::STATE_BOUND) {
-                $str_sql = preg_replace_callback("/\?(\w+)/", array($this, 'replaceTypedParams'), $this->str_prepare_sql);
+                if($this->int_state === self::STATE_BOUND) {
+                    $str_sql = preg_replace_callback("/\?(\w+)/", array($this, 'replaceTypedParams'), $this->str_prepare_sql);
                     $this->str_prepare_sql = NULL;
-                $this->obj_stmt = $this->prepare($str_sql);
-                $this->bindParameters();
+                    $this->obj_stmt = $this->prepare($str_sql);
+                    $this->bindParameters();
                 } elseif ($this->int_state === self::STATE_PREPARED) {
                     $this->obj_stmt = $this->prepare($this->str_prepare_sql);
                     $this->str_prepare_sql = NULL;

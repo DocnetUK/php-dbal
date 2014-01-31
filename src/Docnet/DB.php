@@ -73,7 +73,7 @@ class DB
         if (!$this->obj_db->begin_transaction()) {
             throw new \Exception("Failed to start a transaction");
         }
-            $this->bol_in_transaction = true;
+        $this->bol_in_transaction = true;
         return $this;
     }
 
@@ -195,14 +195,14 @@ class DB
      */
     private function delegateFetch($str_sql, $arr_params, $str_result_class, $int_fetch_mode)
     {
-            $obj_stmt = new DB\Statement($this->obj_db);
+        $obj_stmt = new DB\Statement($this->obj_db);
         if ($str_result_class) {
             $obj_stmt->setResultClass($str_result_class);
         }
         if ($int_fetch_mode === self::FETCH_MODE_ONE) {
-                return $obj_stmt->fetchOne($str_sql, $arr_params);
-            } else {
-                return $obj_stmt->fetchAll($str_sql, $arr_params);
+            return $obj_stmt->fetchOne($str_sql, $arr_params);
+        } else {
+            return $obj_stmt->fetchAll($str_sql, $arr_params);
         }
     }
 
