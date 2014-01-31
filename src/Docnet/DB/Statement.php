@@ -22,8 +22,6 @@ use \Docnet\DB;
 /**
  * Statement class
  *
- * @todo Abstract out the fetch type/classname to a method and config object
- *
  * @author Tom Walder <tom@docnet.nu>
  */
 class Statement
@@ -32,10 +30,10 @@ class Statement
     /**
      * States for our Statement class
      */
-    const STATE_RESET = 1;
-    const STATE_PREPARED = 2;
-    const STATE_BOUND = 3;
-    const STATE_EXECUTED = 5;
+    const STATE_INIT = 1;
+    const STATE_PREPARED = 10;
+    const STATE_BOUND = 20;
+    const STATE_EXECUTED = 30;
 
     /**
      * MySQLi bind types
@@ -46,11 +44,16 @@ class Statement
     const BIND_TYPE_BLOB = 'b';
 
     /**
+     * Named parameter pattern
+     */
+    const NAMED_PARAM_REGEX = "/\?(\w+)/";
+
+    /**
      * Current state
      *
      * @var int
      */
-    private $int_state = self::STATE_RESET;
+    private $int_state = NULL;
 
     /**
      * @var \mysqli
@@ -65,27 +68,27 @@ class Statement
     /**
      * @var string
      */
-    private $str_prepare_sql = '';
+    private $str_prepare_sql = NULL;
 
     /**
      * @var array
      */
-    protected $arr_raw_params = array();
+    private $arr_raw_params = array();
 
     /**
      * @var array
      */
-    protected $arr_raw_types = array();
+    private $arr_raw_types = array();
 
     /**
      * @var string
      */
-    protected $str_bind_string = '';
+    private $str_bind_string = '';
 
     /**
      * @var array
      */
-    protected $arr_bind_params = array();
+    private $arr_bind_params = array();
 
     /**
      * The class into which results will be hydrated (presumably triggering
@@ -93,7 +96,27 @@ class Statement
      *
      * @var string
      */
-    protected $str_result_class = NULL;
+    private $str_result_class = NULL;
+
+    /**
+     * Bind types
+     * http://uk3.php.net/manual/en/function.gettype.php
+     *
+     * Stored as a slightly verbose array for lookup performance later
+     *
+     * @var array
+     */
+    private $arr_bind_type_map = array(
+        "boolean"       => self::BIND_TYPE_INTEGER,
+        "integer"       => self::BIND_TYPE_INTEGER,
+        "double"        => self::BIND_TYPE_DOUBLE,
+        "string"        => self::BIND_TYPE_STRING,
+        "array"         => self::BIND_TYPE_STRING,
+        "object"        => self::BIND_TYPE_STRING,
+        "resource"      => self::BIND_TYPE_STRING,
+        "NULL"          => self::BIND_TYPE_STRING,
+        "unknown type"  => self::BIND_TYPE_STRING
+    );
 
     /**
      * If SQL is passed, store for later preparation (it may have named params that need to be replaced)
@@ -106,7 +129,7 @@ class Statement
     {
         $this->obj_db = $obj_db;
         $this->str_prepare_sql = $str_sql;
-        $this->int_state = self::STATE_PREPARED;
+        $this->int_state = self::STATE_INIT;
         $this->str_result_class = $str_result_class;
     }
 
@@ -177,9 +200,12 @@ class Statement
      * 1. Prepare SQL
      * 2. (if provided) Bind untyped parameters
      *    otherwise bind any previously provided typed parameters
+     * // SHORTHAND calls (i.e. where SQL and all Parameters are passed in one call
      * 3. Execute
      *
-     * This method should now be usable by UPDATE/INSERT/DELETE
+     * This method used by SELECT/UPDATE/INSERT/DELETE
+     *
+     * @todo Make this method less bulky!
      *
      * @param null $arr_params
      * @return array|null|object
@@ -187,26 +213,36 @@ class Statement
     private function process($arr_params = NULL)
     {
         if (NULL === $arr_params) {
-            if(NULL !== $this->str_prepare_sql) {
-                // No parameters, so EITHER
-                // a) the query does not require params (e.g. "SELECT * from tbl")
-                // b) the NAMED parameters have already been bound to this object
+            if($this->str_prepare_sql) {
                 if ($this->int_state === self::STATE_BOUND) {
-                    $str_sql = preg_replace_callback("/\?(\w+)/", array($this, 'replaceTypedParams'), $this->str_prepare_sql);
+                    // The NAMED parameters have already been bound to this object using bind*() methods
+                    $str_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_prepare_sql);
                     $this->str_prepare_sql = NULL;
                     $this->obj_stmt = $this->prepare($str_sql);
                     $this->bindParameters();
-                } elseif ($this->int_state === self::STATE_PREPARED) {
+                } elseif ($this->int_state === self::STATE_INIT) {
+                    // The query does not require params (e.g. "SELECT * from tblData")
                     $this->obj_stmt = $this->prepare($this->str_prepare_sql);
                     $this->str_prepare_sql = NULL;
                 }
-            } else {
-                // This case does exist - and we want to just execute() (at the foot of the method)
             }
         } else {
-            // The parameters passed into this method SHOULD NOT be named, so bind them as such
-            $this->obj_stmt = $this->prepare($this->str_prepare_sql);
-            $this->processUntypedParams($arr_params);
+            // Support for single, scalar parameters
+            if(!is_array($arr_params)) {
+                $arr_params = array($arr_params);
+            }
+            if($this->isAssoc($arr_params)) {
+                // Shorthand, NAMED parameters
+                $this->arr_raw_params = $arr_params;
+                $str_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_prepare_sql);
+                $this->str_prepare_sql = NULL;
+                $this->obj_stmt = $this->prepare($str_sql);
+            } else {
+                // Shorthand, unnamed (i.e. numerically indexed)
+                // No "preg_replace" needed - parameters must be passed in the correct order
+                $this->obj_stmt = $this->prepare($this->str_prepare_sql);
+                $this->applyIndexedParams($arr_params);
+            }
             $this->bindParameters();
         }
         $this->int_state = self::STATE_EXECUTED;
@@ -232,13 +268,14 @@ class Statement
                 )
             );
         }
+        $this->int_state = self::STATE_PREPARED;
         return $obj_stmt;
     }
 
     /**
      * Fetch ONE or ALL results
      *
-     * Note: seems you cannot pass NULL or blank string to fetch_object -
+     * Note: seems you cannot pass NULL or blank string to fetch_object()
      * you must actually NOT pass anything
      *
      * @param int $int_fetch_mode
@@ -273,28 +310,30 @@ class Statement
     }
 
     /**
-     * Determine type as best we can (no blob for now, based on length or byte check?)
+     * Apply parameters from a numerically indexed array
+     *
+     * Determine type using gettype()
      *
      * @param array $arr_params
      */
-    private function processUntypedParams($arr_params)
+    private function applyIndexedParams($arr_params)
     {
         $this->arr_raw_params = $arr_params;
-        foreach ($this->arr_raw_params as $int_key => $mix_param) {
-            switch (gettype($mix_param)) {
-                case "boolean":
-                case "integer":
-                    $this->str_bind_string .= self::BIND_TYPE_INTEGER;
-                    break;
-                case "double":
-                    $this->str_bind_string .= self::BIND_TYPE_DOUBLE;
-                    break;
-                case "string":
-                default:
-                    $this->str_bind_string .= self::BIND_TYPE_STRING;
-            }
-            $this->arr_bind_params[] = & $this->arr_raw_params[$int_key];
+        foreach ($this->arr_raw_params as $mix_key => $mix_param) {
+            $this->str_bind_string .= $this->getBindType($mix_param);
+            $this->arr_bind_params[] = & $this->arr_raw_params[$mix_key];
         }
+    }
+
+    /**
+     * Get the mysqli bind type, based on a parameter value
+     *
+     * @param $mix_param
+     * @return string
+     */
+    private function getBindType($mix_param)
+    {
+        return $this->arr_bind_type_map[gettype($mix_param)];
     }
 
     /**
@@ -342,10 +381,8 @@ class Statement
      */
     public function bindInt($str_key, $int_val)
     {
-        $this->int_state = self::STATE_BOUND;
-        $this->arr_raw_params[$str_key] = $int_val;
         $this->arr_raw_types[$str_key] = self::BIND_TYPE_INTEGER;
-        return $this;
+        return $this->bind($str_key, $int_val);
     }
 
     /**
@@ -357,10 +394,8 @@ class Statement
      */
     public function bindString($str_key, $str_val)
     {
-        $this->int_state = self::STATE_BOUND;
-        $this->arr_raw_params[$str_key] = $str_val;
         $this->arr_raw_types[$str_key] = self::BIND_TYPE_STRING;
-        return $this;
+        return $this->bind($str_key, $str_val);
     }
 
     /**
@@ -372,10 +407,8 @@ class Statement
      */
     public function bindDouble($str_key, $dbl_val)
     {
-        $this->int_state = self::STATE_BOUND;
-        $this->arr_raw_params[$str_key] = $dbl_val;
         $this->arr_raw_types[$str_key] = self::BIND_TYPE_DOUBLE;
-        return $this;
+        return $this->bind($str_key, $dbl_val);
     }
 
     /**
@@ -387,10 +420,8 @@ class Statement
      */
     public function bindBlob($str_key, $blb_val)
     {
-        $this->int_state = self::STATE_BOUND;
-        $this->arr_raw_params[$str_key] = $blb_val;
         $this->arr_raw_types[$str_key] = self::BIND_TYPE_BLOB;
-        return $this;
+        return $this->bind($str_key, $blb_val);
     }
 
     /**
@@ -420,31 +451,29 @@ class Statement
     }
 
     /**
-     * Used by preg_replace_callback() to match named parameters
+     * Named parameter binding
      *
-     * Uses the first character of the named parameter string (unless Typed Binding has been used) to determine data type
+     * Store the REFERENCE to a raw parameter for passing to call_user_func_array() later
      *
-     * @param $arr_matches
+     * @param array $arr_matches
      * @return string
      * @throws \InvalidArgumentException
      */
-    private function replaceTypedParams($arr_matches)
+    private function applyNamedParam($arr_matches)
     {
-        $str_key = $arr_matches[1];
-        if (isset($this->arr_raw_params[$str_key])) {
-
-            // Hard Typed or prefixed?
-            if (isset($this->arr_raw_types[$str_key])) {
-                $this->str_bind_string .= $this->arr_raw_types[$str_key];
+        $str_name = $arr_matches[1];
+        if (isset($this->arr_raw_params[$str_name])) {
+            if (isset($this->arr_raw_types[$str_name])) {
+                // Hard typed
+                $this->str_bind_string .= $this->arr_raw_types[$str_name];
+            } elseif(in_array(substr($str_name, 0, 4), array('int_', 'str_', 'dbl_', 'blb_'))) {
+                // Type hinted
+                $this->str_bind_string .= $str_name[0];
             } else {
-                // String array access for sped
-                $this->str_bind_string .= $str_key[0];
+                // Determine type from data
+                $this->str_bind_string .= $this->getBindType($this->arr_raw_params[$str_name]);
             }
-
-            // Store the REFERENCE to the raw parameter for passing to call_user_func_array() later
-            $this->arr_bind_params[] = & $this->arr_raw_params[$arr_matches[1]];
-
-            // swap out the "?field" for just "?" in the SQL string for MySQLi binding later
+            $this->arr_bind_params[] = & $this->arr_raw_params[$str_name];
             return '?';
         }
         throw new \InvalidArgumentException("Not enough or incorrect named parameters");
@@ -457,6 +486,17 @@ class Statement
     {
         array_unshift($this->arr_bind_params, $this->str_bind_string);
         call_user_func_array(array($this->obj_stmt, 'bind_param'), $this->arr_bind_params);
+    }
+
+    /**
+     * Is the array associative?
+     *
+     * @param array $arr
+     * @return bool
+     */
+    private function isAssoc(array $arr)
+    {
+        return (gettype(array_keys($arr)[0]) == "string");
     }
 
     /**
