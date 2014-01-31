@@ -57,6 +57,13 @@ The `prepare()` method returns a fluent `Statement` class which provides named p
 Parameter binding deals with all escaping and quoting for you.
 
 ## INSERT, UPDATE, DELETE ##
+Insert, update and delete operations (also called DML queries) work in just the
+same way as the ``fetch`` methods.
+```php
+$binds = array(1, 'foo');
+$db->insert("INSERT INTO tblData (intField1, vchField2) VALUES (?,?)", $binds);
+```
+The number of affected rows is returned.
 
 ## Re-executing Prepared Statements ##
 

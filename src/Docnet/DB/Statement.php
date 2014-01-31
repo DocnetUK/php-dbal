@@ -18,7 +18,6 @@
 namespace Docnet\DB;
 
 use \Docnet\DB;
-
 /**
  * Statement class
  *
@@ -76,7 +75,6 @@ class Statement
      * @var array
      */
     protected $arr_raw_params = array();
-
     /**
      * @var array
      */
@@ -110,7 +108,7 @@ class Statement
     public function __construct(\mysqli $obj_db, $str_sql = NULL, $str_result_class = NULL)
     {
         $this->obj_db = $obj_db;
-        if (NULL !== $str_sql) {
+        if(NULL !== $str_sql) {
             $this->str_prepare_sql = $str_sql;
             $this->int_state = self::STATE_PREPARED;
         }
@@ -147,6 +145,18 @@ class Statement
         return NULL;
     }
 
+    public function update($str_sql = NULL, $arr_params = NULL) {
+        return $this->process($str_sql, $arr_params, true);
+    }
+
+    public function insert($str_sql = NULL, $arr_params = NULL) {
+        return $this->process($str_sql, $arr_params, true);
+    }
+
+    public function delete($str_sql = NULL, $arr_params = NULL) {
+        return $this->process($str_sql, $arr_params, true);
+    }
+
     /**
      * Bind, Execute
      *
@@ -174,7 +184,7 @@ class Statement
             // a) the query does not require params (e.g. "SELECT * from tbl")
             // b) the NAMED parameters have already been bound to this object
             if ($this->str_prepare_sql !== NULL) {
-                if ($this->int_state === self::STATE_BOUND) {
+                if($this->int_state === self::STATE_BOUND) {
                     $str_sql = preg_replace_callback("/\?(\w+)/", array($this, 'replaceTypedParams'), $this->str_prepare_sql);
                     $this->str_prepare_sql = NULL;
                     $this->obj_stmt = $this->prepare($str_sql);
@@ -389,10 +399,10 @@ class Statement
     private function replaceTypedParams($arr_matches)
     {
         $str_key = $arr_matches[1];
-        if (isset($this->arr_raw_params[$str_key])) {
+        if(isset($this->arr_raw_params[$str_key])) {
 
             // Hard Typed or prefixed?
-            if (isset($this->arr_raw_types[$str_key])) {
+            if(isset($this->arr_raw_types[$str_key])) {
                 $this->str_bind_string .= $this->arr_raw_types[$str_key];
             } else {
                 // String array access for sped
