@@ -13,7 +13,7 @@ $db = new \Docnet\DB('127.0.0.1', 'root', 'password', 'dbname');
 
 For the following examples, we'll assume there's an active DB object.
 
-## SELECT Star ##
+## My First SELECT ##
 
 After this has executed, `$records` will be an array of objects - we'll talk about what type later.
 
@@ -22,7 +22,7 @@ After this has executed, `$records` will be an array of objects - we'll talk abo
 $records = $db->fetchAll("SELECT * FROM tblData");
 ```
 
-## SELECT One ##
+## SELECT One Record ##
 
 After this has executed, `$record` will be a stdClass object.
 
@@ -40,9 +40,9 @@ $foo = $db->fetchOne("SELECT * FROM tblData WHERE intKey = ?", array(1), 'Foo');
 
 So now, `$foo` is an instance of class `Foo`
 
-## SELECT with parameters and custom result Class ##
+## SELECT with parameters and result Class ##
 
-After execution, `$records` is an array of (namespaced) '\Docnet\Bar' objects, where intKey > 3 and vchName = Barry
+After execution, `$records` is an array of (namespaced) `\Docnet\Bar` objects, where intKey > 3 and vchName = Barry
 
 ```php
 <?php
@@ -56,18 +56,15 @@ The `prepare()` method returns a fluent `Statement` class which provides named p
 
 Parameter binding deals with all escaping and quoting for you.
 
-## SELECT with simple un-named parameter binding ##
+## INSERT, UPDATE, DELETE ##
+
+## Re-executing Prepared Statements ##
+
+## Arbitrary SQL ##
+
+If you REALLY need to, you can just run arbitrary queries like this:
 
 ```php
 <?php
-$records = $db->fetchAll("SELECT * FROM tblData WHERE intPrimaryKey > ?", array(3));
-var_dump($records); // $records is an array of StdObject objects where intPrimaryKey > 3.
-```
-
-## SELECT into class ##
-
-```php
-<?php
-$records = $db->fetchAll("SELECT * FROM tblData WHERE intPrimaryKey > ?", array(3), 'Foo');
-var_dump($records); // $records is a array of 'Foo' objects, where intPrimaryKey > 3
+$db->query("TRUNCATE tblTransient");
 ```
