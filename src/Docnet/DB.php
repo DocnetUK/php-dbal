@@ -155,14 +155,14 @@ class DB
      */
     private function delegateFetch($str_sql, $arr_params, $str_result_class, $int_fetch_mode)
     {
-        $obj_stmt = new DB\Statement($this->obj_db);
+        $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
         if ($str_result_class) {
             $obj_stmt->setResultClass($str_result_class);
         }
         if ($int_fetch_mode === self::FETCH_MODE_ONE) {
-            return $obj_stmt->fetchOne($str_sql, $arr_params);
+            return $obj_stmt->fetchOne($arr_params);
         } else {
-            return $obj_stmt->fetchAll($str_sql, $arr_params);
+            return $obj_stmt->fetchAll($arr_params);
         }
     }
 

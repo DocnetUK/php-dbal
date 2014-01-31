@@ -107,26 +107,23 @@ class Statement
      * @param string $str_sql
      * @param string $str_result_class
      */
-    public function __construct(\mysqli $obj_db, $str_sql = NULL, $str_result_class = NULL)
+    public function __construct(\mysqli $obj_db, $str_sql, $str_result_class = NULL)
     {
         $this->obj_db = $obj_db;
-        if (NULL !== $str_sql) {
-            $this->str_prepare_sql = $str_sql;
-            $this->int_state = self::STATE_PREPARED;
-        }
+        $this->str_prepare_sql = $str_sql;
+        $this->int_state = self::STATE_PREPARED;
         $this->str_result_class = $str_result_class;
     }
 
     /**
      * Execute a query, return the first result.
      *
-     * @param String $str_sql
      * @param Array $arr_params
      * @return Array|NULL
      */
-    public function fetchOne($str_sql = NULL, $arr_params = NULL)
+    public function fetchOne($arr_params = NULL)
     {
-        if ($this->process($str_sql, $arr_params)) {
+        if ($this->process($arr_params)) {
             return $this->fetch(DB::FETCH_MODE_ONE);
         }
         return NULL;
@@ -135,13 +132,12 @@ class Statement
     /**
      * Execute a query, return ALL the results.
      *
-     * @param String $str_sql
      * @param Array $arr_params
      * @return array|NULL
      */
-    public function fetchAll($str_sql = NULL, $arr_params = NULL)
+    public function fetchAll($arr_params = NULL)
     {
-        if ($this->process($str_sql, $arr_params)) {
+        if ($this->process($arr_params)) {
             return $this->fetch(DB::FETCH_MODE_ALL);
         }
         return NULL;
@@ -150,42 +146,33 @@ class Statement
     /**
      * Bind, Execute
      *
-     * 1. (if provided) Reset & prepare SQL
+     * 1. Prepare SQL
      * 2. (if provided) Bind untyped parameters
      *    otherwise bind any typed parameters
      * 3. Execute
      *
      * This method should now be usable by UPDATE/INSERT/DELETE
      *
-     * @param null $str_sql
      * @param null $arr_params
      * @return array|null|object
      */
-    private function process($str_sql = NULL, $arr_params = NULL)
+    private function process($arr_params = NULL)
     {
-        if (NULL !== $str_sql) {
-            // The SQL passed into this method CANNOT contain named parameters
-            // If we're being given SQL at this stage, reset & prepare
-            $this->reset();
-            $this->obj_stmt = $this->prepare($str_sql);
-        }
         if (NULL === $arr_params) {
             // No parameters, so EITHER
             // a) the query does not require params (e.g. "SELECT * from tbl")
             // b) the NAMED parameters have already been bound to this object
-            if ($this->str_prepare_sql !== NULL) {
-                if ($this->int_state === self::STATE_BOUND) {
-                    $str_sql = preg_replace_callback("/\?(\w+)/", array($this, 'replaceTypedParams'), $this->str_prepare_sql);
-                    $this->str_prepare_sql = NULL;
-                    $this->obj_stmt = $this->prepare($str_sql);
-                    $this->bindParameters();
-                } elseif ($this->int_state === self::STATE_PREPARED) {
-                    $this->obj_stmt = $this->prepare($this->str_prepare_sql);
-                    $this->str_prepare_sql = NULL;
-                }
+            if ($this->int_state === self::STATE_BOUND) {
+                $str_sql = preg_replace_callback("/\?(\w+)/", array($this, 'replaceTypedParams'), $this->str_prepare_sql);
+                $this->obj_stmt = $this->prepare($str_sql);
+                $this->bindParameters();
+            } elseif ($this->int_state === self::STATE_PREPARED) {
+                $this->obj_stmt = $this->prepare($this->str_prepare_sql);
+                $this->str_prepare_sql = NULL;
             }
         } else {
             // The parameters passed into this method SHOULD NOT be named, so bind them as such
+            $this->obj_stmt = $this->prepare($this->str_prepare_sql);
             $this->processUntypedParams($arr_params);
             $this->bindParameters();
         }
