@@ -132,6 +132,7 @@ class Statement
     /**
      * Execute a query, return ALL the results.
      *
+     * @param String $str_sql
      * @param Array $arr_params
      * @return array|NULL
      */
@@ -141,6 +142,18 @@ class Statement
             return $this->fetch(DB::FETCH_MODE_ALL);
         }
         return NULL;
+    }
+
+    public function update($str_sql = NULL, $arr_params = NULL) {
+        return $this->process($str_sql, $arr_params, true);
+    }
+
+    public function insert($str_sql = NULL, $arr_params = NULL) {
+        return $this->process($str_sql, $arr_params, true);
+    }
+
+    public function delete($str_sql = NULL, $arr_params = NULL) {
+        return $this->process($str_sql, $arr_params, true);
     }
 
     /**
@@ -158,6 +171,12 @@ class Statement
      */
     private function process($arr_params = NULL)
     {
+        if (NULL !== $str_sql) {
+            // The SQL passed into this method CANNOT contain named parameters
+            // If we're being given SQL at this stage, reset & prepare
+            $this->reset();
+            $this->obj_stmt = $this->prepare($str_sql);
+        }
         if (NULL === $arr_params) {
             if (NULL !== $this->str_prepare_sql) {
                 // No parameters, so EITHER
