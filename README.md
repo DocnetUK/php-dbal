@@ -13,11 +13,58 @@ $db = new \Docnet\DB('127.0.0.1', 'root', 'password', 'dbname');
 
 For the following examples, we'll assume there's an active DB object.
 
-## Example 1 - SELECT Star ##
+## My First SELECT ##
 
 After this has executed, `$records` will be an array of objects - we'll talk about what type later.
 
 ```php
 <?php
 $records = $db->fetchAll("SELECT * FROM tblData");
+```
+
+## SELECT One Record ##
+
+After this has executed, `$record` will be a stdClass object.
+
+```php
+<?php
+$record = $db->fetchOne("SELECT * FROM tblData WHERE intKey = ?", array(1));
+```
+
+If we pass in an optional third parameter, we'll get back an object of that class
+
+```php
+<?php
+$foo = $db->fetchOne("SELECT * FROM tblData WHERE intKey = ?", array(1), 'Foo');
+```
+
+So now, `$foo` is an instance of class `Foo`
+
+## SELECT with parameters and result Class ##
+
+After execution, `$records` is an array of (namespaced) `\Docnet\Bar` objects, where intKey > 3 and vchName = Barry
+
+```php
+<?php
+$records = $db->prepare("SELECT * FROM tblData WHERE intKey > ?id AND vchName = ?name")
+   ->bindInt('id', 3)
+   ->bindString('name', 'Barry')
+   ->setResultClass('\\Docnet\\Bar')
+   ->fetchAll();
+```
+The `prepare()` method returns a fluent `Statement` class which provides named parameter binding.
+
+Parameter binding deals with all escaping and quoting for you.
+
+## INSERT, UPDATE, DELETE ##
+
+## Re-executing Prepared Statements ##
+
+## Arbitrary SQL ##
+
+If you REALLY need to, you can just run arbitrary queries like this:
+
+```php
+<?php
+$db->query("TRUNCATE tblTransient");
 ```

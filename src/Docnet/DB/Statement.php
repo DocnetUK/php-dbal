@@ -17,6 +17,7 @@
 
 namespace Docnet\DB;
 
+use \Docnet\DB;
 /**
  * Statement class
  *
@@ -50,10 +51,6 @@ class Statement
      */
     private $int_state = self::STATE_RESET;
 
-    /**
-     * @var null
-     */
-    private $int_fetch_mode = NULL;
 
     /**
      * @var \mysqli
@@ -79,6 +76,10 @@ class Statement
      * @var array
      */
     protected $arr_raw_params = array();
+    /**
+     * @var array
+     */
+    protected $arr_raw_types = array();
 
     /**
      * @var string
@@ -91,20 +92,32 @@ class Statement
     protected $arr_bind_params = array();
 
     /**
-     * If SQL is passed, store for later preparation
+     * The class into which results will be hydrated (presumably triggering
+     * the magic __set method in the process)
+     *
+     * @var string
      */
-    public function __construct($obj_db, $str_sql = NULL)
+    protected $str_result_class = NULL;
+
+    /**
+     * If SQL is passed, store for later preparation (it may have named params that need to be replaced)
+     *
+     * @param \mysqli $obj_db
+     * @param string $str_sql
+     * @param string $str_result_class
+     */
+    public function __construct(\mysqli $obj_db, $str_sql = NULL, $str_result_class = NULL)
     {
         $this->obj_db = $obj_db;
-        $this->reset();
         if(NULL !== $str_sql) {
             $this->str_prepare_sql = $str_sql;
             $this->int_state = self::STATE_PREPARED;
         }
+        $this->str_result_class = $str_result_class;
     }
 
     /**
-     * Execute a query, return the first result
+     * Execute a query, return the first result.
      *
      * @param String $str_sql
      * @param Array $arr_params
@@ -112,73 +125,82 @@ class Statement
      */
     public function fetchOne($str_sql = NULL, $arr_params = NULL)
     {
-        $this->int_fetch_mode = \Docnet\DB::FETCH_MODE_ONE;
-        return $this->process($str_sql, $arr_params);
-    }
-
-    /**
-     * Execute a query, return ALL the results
-     */
-    public function fetchAll($str_sql = NULL, $arr_params = NULL)
-    {
-        $this->int_fetch_mode = \Docnet\DB::FETCH_MODE_ALL;
-        return $this->process($str_sql, $arr_params);
-    }
-
-    public function update($str_sql = NULL, $arr_params = NULL) {
-        return $this->process($str_sql, $arr_params, true);
-    }
-
-    public function insert($str_sql = NULL, $arr_params = NULL) {
-        return $this->process($str_sql, $arr_params, true);
-    }
-
-    public function delete($str_sql = NULL, $arr_params = NULL) {
-        return $this->process($str_sql, $arr_params, true);
-    }
-
-    /**
-     * Bind (if required), Execute, Fetch
-     *
-     * @param null $str_sql
-     * @param null $arr_params
-     * @param bool $bol_is_dml is the query is a Data Modification Language query?
-     * @return array|null|object
-     */
-    private function process($str_sql = NULL, $arr_params = NULL, $bol_is_dml = false) {
-        if (NULL === $str_sql && NULL === $arr_params) {
-            // If our internal state is 'BOUND' then we need to do the mysqli binding next...
-            if($this->int_state === self::STATE_BOUND) {
-                $str_sql = preg_replace_callback("/\?(\w+)/", array($this, 'replaceTypedParams'), $this->str_prepare_sql);
-                $this->obj_stmt = $this->prepare($str_sql);
-                $this->bindParameters();
-            }
-        } else {
-            // Got an SQL string and some UNNAMED, UNTYPED params
-            $this->reset();
-            $this->processUntypedParams($arr_params);
-            $this->obj_stmt = $this->prepare($str_sql);
-            $this->bindParameters();
-        }
-
-        if ($bol_is_dml) {
-            $this->execute();
-            return $this->obj_stmt->affected_rows;
-        }
-
-        if($this->execute()) {
-            return $this->fetch();
+        if ($this->process($str_sql, $arr_params)) {
+            return $this->fetch(DB::FETCH_MODE_ONE);
         }
         return NULL;
     }
 
     /**
+     * Execute a query, return ALL the results.
+     *
+     * @param String $str_sql
+     * @param Array $arr_params
+     * @return array|NULL
+     */
+    public function fetchAll($str_sql = NULL, $arr_params = NULL)
+    {
+        if ($this->process($str_sql, $arr_params)) {
+            return $this->fetch(DB::FETCH_MODE_ALL);
+        }
+        return NULL;
+    }
+
+    /**
+     * Bind, Execute
+     *
+     * 1. (if provided) Reset & prepare SQL
+     * 2. (if provided) Bind untyped parameters
+     *    otherwise bind any typed parameters
+     * 3. Execute
+     *
+     * This method should now be usable by UPDATE/INSERT/DELETE
+     *
+     * @param null $str_sql
+     * @param null $arr_params
+     * @return array|null|object
+     */
+    private function process($str_sql = NULL, $arr_params = NULL)
+    {
+        if (NULL !== $str_sql) {
+            // The SQL passed into this method CANNOT contain named parameters
+            // If we're being given SQL at this stage, reset & prepare
+            $this->reset();
+            $this->obj_stmt = $this->prepare($str_sql);
+        }
+        if (NULL === $arr_params) {
+            // No parameters, so EITHER
+            // a) the query does not require params (e.g. "SELECT * from tbl")
+            // b) the NAMED parameters have already been bound to this object
+            if ($this->str_prepare_sql !== NULL) {
+            if($this->int_state === self::STATE_BOUND) {
+                $str_sql = preg_replace_callback("/\?(\w+)/", array($this, 'replaceTypedParams'), $this->str_prepare_sql);
+                    $this->str_prepare_sql = NULL;
+                $this->obj_stmt = $this->prepare($str_sql);
+                $this->bindParameters();
+                } elseif ($this->int_state === self::STATE_PREPARED) {
+                    $this->obj_stmt = $this->prepare($this->str_prepare_sql);
+                    $this->str_prepare_sql = NULL;
+                }
+            }
+        } else {
+            // The parameters passed into this method SHOULD NOT be named, so bind them as such
+            $this->processUntypedParams($arr_params);
+            $this->bindParameters();
+        }
+        $this->int_state = self::STATE_EXECUTED;
+        return $this->obj_stmt->execute();
+    }
+
+    /**
      * Common prepare method which throws an exception
+     *
      * @param string $str_sql
      * @return \mysqli_stmt
      * @throws \Exception if the call to mysqli::prepare failed
      */
-    protected function prepare($str_sql) {
+    private function prepare($str_sql)
+    {
         $obj_stmt = $this->obj_db->prepare($str_sql);
         if (!$obj_stmt) {
             throw new \Exception(
@@ -192,37 +214,39 @@ class Statement
         return $obj_stmt;
     }
 
-    /**
-     * Just execute
-     *
-     * No result fetching - generally for inserts/updates
-     *
-     * @return boolean
-     */
-    public function execute()
-    {
-        $this->int_state = self::STATE_EXECUTED;
-        return $this->obj_stmt->execute();
-    }
 
     /**
      * Fetch ONE or ALL results
      *
+     * Note: seems you cannot pass NULL or blank string to fetch_object -
+     * you must actually NOT pass anything
+     *
+     * @param int $int_fetch_mode
      * @return array|object
      */
-    private function fetch()
+    private function fetch($int_fetch_mode = NULL)
     {
         /** @var  $obj_result \mysqli_result */
         $obj_result = $this->obj_stmt->get_result();
-        if ($this->int_fetch_mode === \Docnet\DB::FETCH_MODE_ONE) {
-            $obj_row = $obj_result->fetch_object('\Docnet\DB\Model');
+        if ($int_fetch_mode === DB::FETCH_MODE_ONE) {
+            if ($this->str_result_class) {
+                $obj_row = $obj_result->fetch_object($this->str_result_class);
+            } else {
+                $obj_row = $obj_result->fetch_object();
+            }
             $obj_result->free();
             $this->obj_stmt->close();
             return $obj_row;
         } else {
             $arr_data = array();
-            while ($obj_row = $obj_result->fetch_object('\Docnet\DB\Model')) {
+            if ($this->str_result_class) {
+                while ($obj_row = $obj_result->fetch_object($this->str_result_class)) {
                 $arr_data[] = $obj_row;
+            }
+            } else {
+                while ($obj_row = $obj_result->fetch_object()) {
+                    $arr_data[] = $obj_row;
+                }
             }
             $obj_result->free();
             $this->obj_stmt->close();
@@ -253,6 +277,23 @@ class Statement
             }
             $this->arr_bind_params[] = & $this->arr_raw_params[$int_key];
         }
+    }
+
+    /**
+     * Change the class, on a per statement/query level, into which SELECT
+     * results are hydrated.
+     *
+     * @param string $str_result_class the target class
+     * @return $this
+     * @throws \Exception
+     */
+    public function setResultClass($str_result_class = NULL)
+    {
+        if (NULL === $str_result_class || class_exists($str_result_class)) {
+            $this->str_result_class = $str_result_class;
+            return $this;
+        }
+        throw new \Exception("Result class does not exist: " . $str_result_class);
     }
 
     /**
