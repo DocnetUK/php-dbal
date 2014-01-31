@@ -24,18 +24,18 @@ $records = $db->fetchAll("SELECT * FROM tblData");
 
 ## SELECT with parameters and custom result Class ##
 
-After execution, `$records` is an array of 'Foo' objects, where intPrimaryKey > 3 and vchName = Barry
+After execution, `$records` is an array of 'Foo' objects, where intKey > 3 and vchName = Barry
 
 ```php
 <?php
-$records = $db->prepare("SELECT * FROM tblData WHERE intPrimaryKey > ?id AND vchName = ?name")
+$records = $db->prepare("SELECT * FROM tblData WHERE intKey > ?id AND vchName = ?name")
    ->bindInt('id', 3)
    ->bindString('name', 'Barry')
    ->setResultClass('Foo')
    ->fetchAll();
 var_dump($records);
 ```
-The prepare() method returns a Statement class which provides named parameter binding.
+The `prepare()` method returns a fluent `Statement` class which provides named parameter binding.
 
 Parameter binding deals with all escaping and quoting for you.
 
