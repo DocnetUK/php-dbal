@@ -146,6 +146,18 @@ class Statement
         return NULL;
     }
 
+    public function update($str_sql = NULL, $arr_params = NULL) {
+        return $this->process($str_sql, $arr_params, true);
+    }
+
+    public function insert($str_sql = NULL, $arr_params = NULL) {
+        return $this->process($str_sql, $arr_params, true);
+    }
+
+    public function delete($str_sql = NULL, $arr_params = NULL) {
+        return $this->process($str_sql, $arr_params, true);
+    }
+
     /**
      * Bind, Execute
      *
