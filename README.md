@@ -69,10 +69,9 @@ The number of affected rows is returned.
 ## Re-executing Prepared Statements ##
 ```php
 <?php
-$binds = array(1, 'foo');
-$db->prepare("SELECT * FROM tblData WHERE intKey = ?id", $binds);
-$db->bindInt('id', 4)->fetchOne();
-$db->bindInt('id', 5)->fetchOne();
+$stmt = $db->prepare("SELECT * FROM tblData WHERE intKey = ?id");
+$stmt->bindInt('id', 4)->fetchOne();
+$stmt->bindInt('id', 5)->fetchOne();
 ```
 
 ## Arbitrary SQL ##
