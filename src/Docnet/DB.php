@@ -18,9 +18,7 @@
 namespace Docnet;
 
 /**
- * Easy DB
- *
- * @todo move connection data to config object
+ * DB stuff
  *
  * @author Tom Walder <tom@docnet.nu>
  */
@@ -34,19 +32,9 @@ class DB
     const FETCH_MODE_ALL = 2;
 
     /**
-     * @var \Docnet\DB
-     */
-    private static $obj_instance = NULL;
-
-    /**
      * @var \mysqli
      */
     private $obj_db = NULL;
-
-    /**
-     * @var null
-     */
-    private $int_fetch_mode = NULL;
 
     /**
      * @var bool
@@ -75,31 +63,32 @@ class DB
      * @returns \Docnet\Db
      * @throws \Exception if mysqli::begin_transaction() returned false
      */
-    public function begin() {
+    public function begin()
+    {
         if ($this->bol_in_transaction) {
-            return;
+            return $this;
         }
-
         if (!$this->obj_db->begin_transaction()) {
             throw new \Exception("Failed to start a transaction");
-        } else {
-            $this->bol_in_transaction = true;
         }
+        $this->bol_in_transaction = true;
         return $this;
     }
 
     /**
      * Commit a transaction. If we're not in transaction, throw an exception.
      * It's important that the calling code knows it's not in a transaction if
-     * the deveoper assumed that they were.
+     * the developer assumed that they were.
      *
      * @todo Are we scared that bol_in_transaction might get out of sync and
      * prevent legit commits?
+     *
      * @return \Docnet\DB
      * @throws \Exception if we're not in a transaction
      * @throws \Exception if the driver reports that the commit failed
      */
-    public function commit() {
+    public function commit()
+    {
         if (!$this->bol_in_transaction) {
             throw new \Exception("Not in a transaction, can't commit");
         }
@@ -111,11 +100,13 @@ class DB
 
     /**
      * Rollback a transaction.
+     *
      * @returns \Docnet\DB
      * @throws \Exception if we're not in a transaction
      * @throws \Exception if the driver reports that the rollback failed
      */
-    public function rollback() {
+    public function rollback()
+    {
         if (!$this->bol_in_transaction) {
             throw new \Exception("Not in a transaction, can't rollback");
         }
@@ -125,18 +116,18 @@ class DB
         return $this;
     }
 
-
     /**
      * Execute a query, return the results as an array
      *
      * @param String $str_sql
      * @param Array $arr_params
+     * @param String $str_result_class manually override result class (just for
+     * this query)
      * @return Array|NULL
      */
-    public function fetchAll($str_sql, $arr_params = NULL)
+    public function fetchAll($str_sql, $arr_params = NULL, $str_result_class = NULL)
     {
-        $this->int_fetch_mode = self::FETCH_MODE_ALL;
-        return $this->delegateFetch($str_sql, $arr_params);
+        return $this->delegateFetch($str_sql, $arr_params, $str_result_class, self::FETCH_MODE_ALL);
     }
 
     /**
@@ -144,68 +135,49 @@ class DB
      *
      * @param String $str_sql
      * @param Array $arr_params
+     * @param String $str_result_class manually override result class (just for
+     * this query)
      * @return Array|NULL
      */
-    public function fetchOne($str_sql, $arr_params = NULL)
+    public function fetchOne($str_sql, $arr_params = NULL, $str_result_class = NULL)
     {
-        $this->int_fetch_mode = self::FETCH_MODE_ONE;
-        return $this->delegateFetch($str_sql, $arr_params);
+        return $this->delegateFetch($str_sql, $arr_params, $str_result_class, self::FETCH_MODE_ONE);
     }
 
     /**
-     * Direct or Statement
+     * Create, configure and call Statement
      *
      * @param $str_sql
      * @param null $arr_params
+     * @param String $str_result_class
+     * @param int $int_fetch_mode
      * @return Array|NULL|void
      */
-    private function delegateFetch($str_sql, $arr_params = NULL)
+    private function delegateFetch($str_sql, $arr_params, $str_result_class, $int_fetch_mode)
     {
-        if (NULL === $arr_params) {
-            return $this->fetchDirect($str_sql);
+        $obj_stmt = new DB\Statement($this->obj_db);
+        if ($str_result_class) {
+            $obj_stmt->setResultClass($str_result_class);
+        }
+        if ($int_fetch_mode === self::FETCH_MODE_ONE) {
+            return $obj_stmt->fetchOne($str_sql, $arr_params);
         } else {
-            $obj_stmt = new DB\Statement($this->obj_db);
-            if ($this->int_fetch_mode === self::FETCH_MODE_ONE) {
-                return $obj_stmt->fetchOne($str_sql, $arr_params);
-            } else {
-                return $obj_stmt->fetchAll($str_sql, $arr_params);
-            }
+            return $obj_stmt->fetchAll($str_sql, $arr_params);
         }
-    }
-
-    /**
-     * Direct query & fetch
-     *
-     * @param $str_sql
-     * @return array|null|object|\stdClass
-     */
-    private function fetchDirect($str_sql)
-    {
-        if ($obj_result = $this->obj_db->query($str_sql)) {
-            if ($this->int_fetch_mode === self::FETCH_MODE_ONE) {
-                $obj_row = $obj_result->fetch_object('\Docnet\DB\Model');
-                $obj_result->free();
-                return $obj_row;
-            } else {
-                $arr_data = array();
-                while ($obj_row = $obj_result->fetch_object('\Docnet\DB\Model')) {
-                    $arr_data[] = $obj_row;
-                }
-                $obj_result->free();
-                return $arr_data;
-            }
-        }
-        return NULL;
     }
 
     /**
      * Set up a Statement
      *
      * @param $str_sql
-     * @return $this
+     * @return \Docnet\DB\Statement
+     * @throws \InvalidArgumentException
      */
-    public function prepare($str_sql)
+    public function prepare($str_sql = NULL)
     {
+        if(NULL === $str_sql) {
+            throw new \InvalidArgumentException("SQL required for prepare() call");
+        }
         $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
         return $obj_stmt;
     }
@@ -213,8 +185,8 @@ class DB
     /**
      * Escape a string - utility method. Prefer using prepare/bind/fetch
      *
-     * @param type $str
-     * @return type
+     * @param string $str
+     * @return string
      */
     public function escape($str)
     {
@@ -230,19 +202,6 @@ class DB
     public function query($sql)
     {
         return $this->obj_db->query($sql);
-    }
-
-    /**
-     * Get the Singleton instance
-     *
-     * @return \Docnet\DB
-     */
-    public static function instance()
-    {
-        if (NULL === self::$obj_instance) {
-            self::$obj_instance = new DB();
-        }
-        return self::$obj_instance;
     }
 
     /**

@@ -67,3 +67,9 @@ print_r($obj_db->fetchAll("SELECT * FROM tblServer WHERE vchType = ?", array('we
 echo "\nfetchAll(), mode 3\n";
 $obj_stmt = $obj_db->prepare("SELECT * FROM tblServer WHERE vchType = ?val")->bindString('val', 'web');
 print_r($obj_stmt->fetchAll());
+
+echo "\nprepare()->fetchOne();\n";
+print_r($obj_db->prepare("SELECT * FROM tblServer")->fetchOne());
+
+echo "\nprepare()->setResultClass()->fetchOne();\n";
+print_r($obj_db->prepare("SELECT * FROM tblServer")->setResultClass('\\Docnet\\DB\\Model')->fetchOne());
