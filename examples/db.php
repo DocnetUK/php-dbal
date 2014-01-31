@@ -25,37 +25,31 @@ $arr_objects = array();
 /**
  * Simple - no parameters
  */
-$arr_objects[] = $obj_db->fetchOne("SELECT * FROM tblServer");
-
-
+print_r($obj_db->fetchOne("SELECT * FROM tblServer"));
 /**
- * Statement/bind Type 1 - unnamed parameters - uses gettype()
+ * Statement/bind Type 1 - indexed parameters
  */
-$arr_objects[] = $obj_db->fetchOne("SELECT * FROM tblServer WHERE intID = ? AND vchType = ?", array(1, 'web'));
-
+print_r($obj_db->fetchOne("SELECT * FROM tblServer WHERE intID = ? AND vchType = ?", array(1, 'web')));
 
 /**
  * Statement/bind Type 2 - named/hungarian parameters - uses key prefix (int/str/dbl/blb)
  */
-$arr_objects[] = $obj_db
-    ->prepare("SELECT * FROM tblServer WHERE intID = ?int_id AND vchType = ?str_val")
-    ->bind('int_id', 2)
-    ->bind('str_val', 'web')
-    ->fetchOne();
+print_r(
+    $obj_db->prepare("SELECT * FROM tblServer WHERE intID = ?int_id AND vchType = ?str_val")
+        ->bind('int_id', 2)
+        ->bind('str_val', 'web')
+        ->fetchOne()
+);
 
 /**
  * Statement/bind Type 3 - named parameters - alternative bindXxxx() methods
  */
-$arr_objects[] = $obj_db->prepare("SELECT * FROM tblServer WHERE intID = ?id AND vchType = ?val")
-    ->bindInt('id', 2)
-    ->bindString('val', 'web')
-    ->fetchOne();
-
-print_r($arr_objects);
-echo "Done fetchOne() x 4\n";
-echo "===================\n\n";
-
-
+print_r(
+    $obj_db->prepare("SELECT * FROM tblServer WHERE intID = ?id AND vchType = ?val")
+        ->bindInt('id', 2)
+        ->bindString('val', 'web')
+        ->fetchOne()
+);
 
 echo "\nfetchAll(), mode 1\n";
 print_r($obj_db->fetchAll("SELECT * FROM tblServer"));
@@ -103,6 +97,26 @@ $stmt
     ->bindString('name', 'd')
     ->insert();
 print_r($obj_db->fetchAll("SELECT * FROM tblServer"));
-print_r($obj_db->delete("DELETE FROM tblServer WHERE vchType = ?", array('test')));
+echo "Deleted rows: " . $obj_db->delete("DELETE FROM tblServer WHERE vchType = ?", array('test'));
+
+
+// NAMED in a single call
+echo "\n\nSingle named shorthand parameter\n";
+print_r(
+    $obj_db->fetchOne("SELECT * FROM tblServer WHERE intID = ?id",
+        array("id" => 1)
+    )
+);
+
+// scalar params
+echo "\n\nSingle shorthand scalar parameter\n";
+print_r(
+    $obj_db->fetchOne("SELECT * FROM tblServer WHERE intID = ?", 2)
+);
+
+
+
+
+
 
 echo "\n\nDONE!!\n\n";
