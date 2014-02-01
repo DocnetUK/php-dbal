@@ -162,7 +162,7 @@ The following methods are available
 - `insert()`
 - `update()`
 - `delete()`
-- `prepare()` which returns a `Statement` class
+- `prepare()` which returns a new `Statement` object when called
 - `query()`
 
 ### Statement Class ###
