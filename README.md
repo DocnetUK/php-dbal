@@ -15,7 +15,7 @@ For the following examples, we'll assume there's an active DB object.
 
 ## My First SELECT ##
 
-After this has executed, `$records` will be an array of objects - we'll talk about what type later.
+After this has executed, `$records` will be an array of `stdClass` objects - see how to change the result class later.
 
 ```php
 <?php
@@ -28,14 +28,16 @@ After this has executed, `$record` will be a stdClass object.
 
 ```php
 <?php
-$record = $db->fetchOne("SELECT * FROM tblData WHERE intKey = ?", array(1));
+$record = $db->fetchOne("SELECT * FROM tblData WHERE intKey = ?", 84);
 ```
+
+### Result Class ###
 
 If we pass in an optional third parameter, we'll get back an object of that class
 
 ```php
 <?php
-$foo = $db->fetchOne("SELECT * FROM tblData WHERE intKey = ?", array(1), 'Foo');
+$foo = $db->fetchOne("SELECT * FROM tblData WHERE intKey = ?", 84, 'Foo');
 ```
 
 So now, `$foo` is an instance of class `Foo`
@@ -62,9 +64,12 @@ same way as the ``fetch`` methods.
 ```php
 <?php
 $binds = array(1, 'foo');
-$db->insert("INSERT INTO tblData (intField1, vchField2) VALUES (?,?)", $binds);
+$db->insert("INSERT INTO tblData (intField1, vchField2) VALUES (?, ?)", $binds);
 ```
-The number of affected rows is returned.
+
+### Return Values ###
+- `insert()` returns the last insert id
+- `update()` and `delete()` return the number of affected rows
 
 ## Re-executing Prepared Statements ##
 ```php
