@@ -113,22 +113,22 @@ Shorthand, single scalar value
 
 ```php
 <?php
-$record = $db->fetchOne("SELECT * FROM tblData WHERE intKey = ?", 84);
+$db->fetchOne("SELECT * FROM tblData WHERE intKey = ?", 84);
 ```
 
 Shorthand array of parameters - parameter sequence must match your query
 
 ```php
 <?php
-$record = $db->fetchOne("SELECT * FROM tblData WHERE intKey = ? AND vchName = ?", array(84, 'Tom'));
+$db->fetchOne("SELECT * FROM tblData WHERE intKey = ? AND vchName = ?", array(84, 'Tom'));
 ```
 
-Shorthand array of named parameters - any sequence
+Shorthand array of named parameters - any sequence, types auto-detected
 
 ```php
 <?php
-$params = array('name => 'Tom', 'id' => 84);
-$record = $db->fetchOne("SELECT * FROM tblData WHERE intKey = ?id AND vchName = ?name", $params);
+$params = array('name' => 'Tom', 'id' => 84);
+$db->fetchOne("SELECT * FROM tblData WHERE intKey = ?id AND vchName = ?name", $params);
 ```
 
 Long-hand typed, named binding - fluent, any sequence
@@ -164,6 +164,7 @@ The following methods are available
 - `delete()`
 - `prepare()` which returns a new `Statement` object when called
 - `query()`
+- `escape()`
 
 ### Statement Class ###
 
@@ -184,6 +185,6 @@ Binding
 - `bindDouble()`
 - `bindBlob()`
 
-Other
+Post execution
 - `getInsertId()`
 - `getAffectedRows()`
