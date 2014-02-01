@@ -163,21 +163,27 @@ The following methods are available
 - `update()`
 - `delete()`
 - `prepare()` which returns a `Statement` class
+- `query()`
 
 ### Statement Class ###
 
+SELECT
 - `fetchOne()`
 - `fetchAll()`
+- `setResultClass()`
+
+DML
 - `insert()`
 - `update()`
 - `delete()`
 
+Binding
 - `bind()`
 - `bindInt()`
 - `bindString()`
 - `bindDouble()`
 - `bindBlob()`
-- `setResultClass()`
 
+Other
 - `getInsertId()`
 - `getAffectedRows()`
