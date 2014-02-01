@@ -61,6 +61,7 @@ Parameter binding deals with all escaping and quoting for you.
 ## INSERT, UPDATE, DELETE ##
 Insert, update and delete operations (also called DML queries) work in just the
 same way as the ``fetch`` methods.
+
 ```php
 <?php
 $binds = array(1, 'foo');
@@ -72,11 +73,25 @@ $db->insert("INSERT INTO tblData (intField1, vchField2) VALUES (?, ?)", $binds);
 - `update()` and `delete()` return the number of affected rows
 
 ## Re-executing Prepared Statements ##
+
+For SELECTs
+
 ```php
 <?php
 $stmt = $db->prepare("SELECT * FROM tblData WHERE intKey = ?id");
 $stmt->bindInt('id', 4)->fetchOne();
 $stmt->bindInt('id', 5)->fetchOne();
+```
+
+Or, more commonly, INSERTs - this can be MUCH higher performance than running multiple INSERT queries as the server only
+interprets the SQL string once.
+
+```php
+<?php
+$stmt = $db->prepare("INSERT INTO tblPeople VALUES (?name");
+$stmt->bindString('name', 'Tom')->insert();
+$stmt->bindString('name', 'Dick')->insert();
+$stmt->bindString('name', 'Harry')->insert();
 ```
 
 ## Arbitrary SQL ##
@@ -87,3 +102,82 @@ If you REALLY need to, you can just run arbitrary queries like this:
 <?php
 $db->query("TRUNCATE tblTransient");
 ```
+
+## Binding ##
+
+Binding is great.  It allows the DBAL to take care of **escaping AND quoting**.
+
+There are quite a few different supported binding methods (probably to many, but keen to be flexible).
+
+Shorthand, single scalar value
+
+```php
+<?php
+$record = $db->fetchOne("SELECT * FROM tblData WHERE intKey = ?", 84);
+```
+
+Shorthand array of parameters - parameter sequence must match your query
+
+```php
+<?php
+$record = $db->fetchOne("SELECT * FROM tblData WHERE intKey = ? AND vchName = ?", array(84, 'Tom'));
+```
+
+Shorthand array of named parameters - any sequence
+
+```php
+<?php
+$params = array('name => 'Tom', 'id' => 84);
+$record = $db->fetchOne("SELECT * FROM tblData WHERE intKey = ?id AND vchName = ?name", $params);
+```
+
+Long-hand typed, named binding - fluent, any sequence
+
+```php
+<?php
+$db->prepare("SELECT * FROM tblData WHERE intKey = ?id AND vchName = ?name")
+   ->bindString('name', 'Dick')
+   ->bindInt('id', 4)
+   ->fetchOne();
+```
+
+Long-hand type-hinted, named binding - fluent, any sequence
+
+```php
+<?php
+$db->prepare("SELECT * FROM tblData WHERE intKey = ?int_id AND vchName = ?str_name")
+   ->bind('str_name', 'Dick')
+   ->bind('int_id', 4)
+   ->fetchOne();
+```
+
+## Public Methods ##
+
+### DB Class ###
+
+The following methods are available
+
+- `fetchOne()`
+- `fetchAll()`
+- `insert()`
+- `update()`
+- `delete()`
+- `prepare()` which returns a `Statement` class
+
+### Statement Class ###
+
+- `fetchOne()`
+- `fetchAll()`
+- `insert()`
+- `update()`
+- `delete()`
+
+- `bind()`
+- `bindInt()`
+- `bindString()`
+- `bindDouble()`
+- `bindBlob()`
+- `setResultClass()`
+
+- `getInsertId()`
+- `getAffectedRows()`
