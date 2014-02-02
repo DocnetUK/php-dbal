@@ -226,22 +226,22 @@ class Statement
                 }
             }
         } else {
-            // Support for single, scalar parameters. We can skip isAssoc() check
-            $bol_assoc_check = TRUE;
-            if(!is_array($arr_params)) {
-                $arr_params = array($arr_params);
-                $bol_assoc_check = FALSE;
-            }
-            if($bol_assoc_check && $this->isAssoc($arr_params)) {
+            $this->arr_raw_params = $arr_params;
+            if(!is_array($this->arr_raw_params)) {
+                // Support for single, scalar parameters.
+                $this->str_bind_string = $this->getBindType($this->arr_raw_params);
+                $this->arr_bind_params[] = & $this->arr_raw_params;
+            } elseif ($this->isAssoc($arr_params)) {
                 // Shorthand, NAMED parameters
-                $this->arr_raw_params = $arr_params;
                 $this->str_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_sql);
-                $this->prepare();
             } else {
                 // Shorthand, unnamed (i.e. numerically indexed) - parameters must be passed in the correct order
-                $this->prepare();
-                $this->applyIndexedParams($arr_params);
+                foreach ($this->arr_raw_params as $int_key => $mix_param) {
+                    $this->str_bind_string .= $this->getBindType($mix_param);
+                    $this->arr_bind_params[] = & $this->arr_raw_params[$int_key];
+                }
             }
+            $this->prepare();
             $this->bindParameters();
         }
         $this->int_state = self::STATE_EXECUTED;
@@ -309,22 +309,6 @@ class Statement
         }
         $obj_result->free();
         return $mix_data;
-    }
-
-    /**
-     * Apply parameters from a numerically indexed array
-     *
-     * Determine type using gettype()
-     *
-     * @param array $arr_params
-     */
-    private function applyIndexedParams($arr_params)
-    {
-        $this->arr_raw_params = $arr_params;
-        foreach ($this->arr_raw_params as $mix_key => $mix_param) {
-            $this->str_bind_string .= $this->getBindType($mix_param);
-            $this->arr_bind_params[] = & $this->arr_raw_params[$mix_key];
-        }
     }
 
     /**
