@@ -22,6 +22,8 @@ require('../src/Docnet/DB/Model.php');
 $obj_db = new \Docnet\DB('127.0.0.1', 'root', 'letmein', 'dbCluster');
 $arr_objects = array();
 
+echo round(memory_get_usage()/1024/1024, 2) . "MB\n";
+
 /**
  * Simple - no parameters
  */
@@ -115,8 +117,8 @@ print_r(
 );
 
 
+echo "\n\n=========================================\n";
+echo "Statements: " . print_r(\Docnet\DB\Statement::getStats(), TRUE);
+echo "Memory: " . round(memory_get_usage()/1024/1024, 2) . "MB (peak ".round(memory_get_peak_usage()/1024/1024, 2).")\n";
 
-
-
-
-echo "\n\nDONE!!\n\n";
+echo "\nDone\n";
