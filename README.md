@@ -107,7 +107,7 @@ $db->query("TRUNCATE tblTransient");
 
 Binding is great.  It allows the DBAL to take care of **escaping AND quoting**.
 
-There are quite a few different supported binding methods (probably to many, but keen to be flexible).
+There are quite a few different supported binding methods (probably too many, but I'm keen to be flexible).
 
 Shorthand, single scalar value
 
