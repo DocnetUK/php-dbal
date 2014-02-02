@@ -202,7 +202,7 @@ class DB
         if ($str_result_class) {
             $obj_stmt->setResultClass($str_result_class);
         }
-        if ($int_fetch_mode === self::FETCH_MODE_ONE) {
+        if (self::FETCH_MODE_ONE === $int_fetch_mode) {
             return $obj_stmt->fetchOne($arr_params);
         } else {
             return $obj_stmt->fetchAll($arr_params);
