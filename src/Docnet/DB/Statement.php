@@ -204,8 +204,6 @@ class Statement
      *
      * This method used by SELECT/UPDATE/INSERT/DELETE
      *
-     * @todo Make this method less bulky!
-     *
      * @param null $arr_params
      * @return array|null|object
      */
@@ -215,14 +213,12 @@ class Statement
             if($this->str_prepare_sql) {
                 if ($this->int_state === self::STATE_BOUND) {
                     // The NAMED parameters have already been bound to this object using bind*() methods
-                    $str_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_prepare_sql);
-                    $this->str_prepare_sql = NULL;
-                    $this->obj_stmt = $this->prepare($str_sql);
+                    $this->str_prepare_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_prepare_sql);
+                    $this->prepare();
                     $this->bindParameters();
                 } elseif ($this->int_state === self::STATE_INIT) {
                     // The query does not require params (e.g. "SELECT * from tblData")
-                    $this->obj_stmt = $this->prepare($this->str_prepare_sql);
-                    $this->str_prepare_sql = NULL;
+                    $this->prepare();
                 }
             }
         } else {
@@ -235,12 +231,11 @@ class Statement
             if($bol_assoc_check && $this->isAssoc($arr_params)) {
                 // Shorthand, NAMED parameters
                 $this->arr_raw_params = $arr_params;
-                $str_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_prepare_sql);
-                $this->str_prepare_sql = NULL;
-                $this->obj_stmt = $this->prepare($str_sql);
+                $this->str_prepare_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_prepare_sql);
+                $this->prepare();
             } else {
                 // Shorthand, unnamed (i.e. numerically indexed) - parameters must be passed in the correct order
-                $this->obj_stmt = $this->prepare($this->str_prepare_sql);
+                $this->prepare();
                 $this->applyIndexedParams($arr_params);
             }
             $this->bindParameters();
@@ -250,16 +245,15 @@ class Statement
     }
 
     /**
-     * Common prepare method which throws an exception
+     * Common prepare method which throws an exception if it cannot, in fact,
+     * prepare
      *
-     * @param string $str_sql
-     * @return \mysqli_stmt
      * @throws \Exception if the call to mysqli::prepare failed
      */
-    private function prepare($str_sql)
+    private function prepare()
     {
-        $obj_stmt = $this->obj_db->prepare($str_sql);
-        if (!$obj_stmt) {
+        $this->obj_stmt = $this->obj_db->prepare($this->str_prepare_sql);
+        if (!$this->obj_stmt) {
             throw new \Exception(
                 sprintf(
                     'Error preparing statement - Code: %d, Message: "%s"',
@@ -269,7 +263,7 @@ class Statement
             );
         }
         $this->int_state = self::STATE_PREPARED;
-        return $obj_stmt;
+        $this->str_prepare_sql = NULL;
     }
 
     /**
