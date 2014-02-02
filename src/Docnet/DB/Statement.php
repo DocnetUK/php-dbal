@@ -68,7 +68,7 @@ class Statement
     /**
      * @var string
      */
-    private $str_prepare_sql = NULL;
+    private $str_sql = NULL;
 
     /**
      * @var array
@@ -97,6 +97,15 @@ class Statement
      * @var string
      */
     private $str_result_class = NULL;
+
+    /**
+     * Member variables for statistics
+     *
+     * @var int
+     */
+    private static $int_statement = 0;
+    private static $int_prepare = 0;
+    private static $int_execute = 0;
 
     /**
      * Bind types
@@ -128,9 +137,10 @@ class Statement
     public function __construct(\mysqli $obj_db, $str_sql, $str_result_class = NULL)
     {
         $this->obj_db = $obj_db;
-        $this->str_prepare_sql = $str_sql;
+        $this->str_sql = $str_sql;
         $this->int_state = self::STATE_INIT;
         $this->str_result_class = $str_result_class;
+        self::$int_statement++;
     }
 
     /**
@@ -141,10 +151,7 @@ class Statement
      */
     public function fetchOne($arr_params = NULL)
     {
-        if ($this->process($arr_params)) {
-            return $this->fetch(DB::FETCH_MODE_ONE);
-        }
-        return NULL;
+        return $this->processAndFetch($arr_params, DB::FETCH_MODE_ONE);
     }
 
     /**
@@ -155,10 +162,7 @@ class Statement
      */
     public function fetchAll($arr_params = NULL)
     {
-        if ($this->process($arr_params)) {
-            return $this->fetch(DB::FETCH_MODE_ALL);
-        }
-        return NULL;
+        return $this->processAndfetch($arr_params, DB::FETCH_MODE_ALL);
     }
 
     /**
@@ -210,10 +214,10 @@ class Statement
     private function process($arr_params = NULL)
     {
         if (NULL === $arr_params) {
-            if($this->str_prepare_sql) {
+            if($this->str_sql) {
                 if ($this->int_state === self::STATE_BOUND) {
                     // The NAMED parameters have already been bound to this object using bind*() methods
-                    $this->str_prepare_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_prepare_sql);
+                    $this->str_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_sql);
                     $this->prepare();
                     $this->bindParameters();
                 } elseif ($this->int_state === self::STATE_INIT) {
@@ -231,7 +235,7 @@ class Statement
             if($bol_assoc_check && $this->isAssoc($arr_params)) {
                 // Shorthand, NAMED parameters
                 $this->arr_raw_params = $arr_params;
-                $this->str_prepare_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_prepare_sql);
+                $this->str_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_sql);
                 $this->prepare();
             } else {
                 // Shorthand, unnamed (i.e. numerically indexed) - parameters must be passed in the correct order
@@ -241,6 +245,7 @@ class Statement
             $this->bindParameters();
         }
         $this->int_state = self::STATE_EXECUTED;
+        self::$int_execute++;
         return $this->obj_stmt->execute();
     }
 
@@ -252,7 +257,8 @@ class Statement
      */
     private function prepare()
     {
-        $this->obj_stmt = $this->obj_db->prepare($this->str_prepare_sql);
+        self::$int_prepare++;
+        $this->obj_stmt = $this->obj_db->prepare($this->str_sql);
         if (!$this->obj_stmt) {
             throw new \Exception(
                 sprintf(
@@ -263,44 +269,46 @@ class Statement
             );
         }
         $this->int_state = self::STATE_PREPARED;
-        $this->str_prepare_sql = NULL;
+        $this->str_sql = NULL;
     }
 
     /**
-     * Fetch ONE or ALL results
+     * Process & Fetch ONE or ALL results
      *
      * Note: seems you cannot pass NULL or blank string to fetch_object()
      * you must actually NOT pass anything
      *
+     * @param array $arr_params
      * @param int $int_fetch_mode
-     * @return array|object
+     * @return array|object|null
      */
-    private function fetch($int_fetch_mode = NULL)
+    private function processAndFetch($arr_params, $int_fetch_mode)
     {
+        if (!$this->process($arr_params)) {
+            return NULL;
+        }
         /** @var  $obj_result \mysqli_result */
         $obj_result = $this->obj_stmt->get_result();
-        if ($int_fetch_mode === DB::FETCH_MODE_ONE) {
+        if (DB::FETCH_MODE_ONE === $int_fetch_mode) {
             if ($this->str_result_class) {
-                $obj_row = $obj_result->fetch_object($this->str_result_class);
+                $mix_data = $obj_result->fetch_object($this->str_result_class);
             } else {
-                $obj_row = $obj_result->fetch_object();
+                $mix_data = $obj_result->fetch_object();
             }
-            $obj_result->free();
-            return $obj_row;
         } else {
-            $arr_data = array();
+            $mix_data = array();
             if ($this->str_result_class) {
                 while ($obj_row = $obj_result->fetch_object($this->str_result_class)) {
-                    $arr_data[] = $obj_row;
+                    $mix_data[] = $obj_row;
                 }
             } else {
                 while ($obj_row = $obj_result->fetch_object()) {
-                    $arr_data[] = $obj_row;
+                    $mix_data[] = $obj_row;
                 }
             }
-            $obj_result->free();
-            return $arr_data;
         }
+        $obj_result->free();
+        return $mix_data;
     }
 
     /**
@@ -494,6 +502,20 @@ class Statement
     private function isAssoc(array $arr)
     {
         return (gettype(array_keys($arr)[0]) == "string");
+    }
+
+    /**
+     * Return statistical data
+     *
+     * @return array
+     */
+    public static function getStats()
+    {
+        return array(
+            'objects' => self::$int_statement,
+            'prepare' => self::$int_prepare,
+            'execute' => self::$int_execute
+        );
     }
 
     /**
