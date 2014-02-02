@@ -200,7 +200,6 @@ class Statement
      * 1. Prepare SQL
      * 2. (if provided) Bind untyped parameters
      *    otherwise bind any previously provided typed parameters
-     * // SHORTHAND calls (i.e. where SQL and all Parameters are passed in one call
      * 3. Execute
      *
      * This method used by SELECT/UPDATE/INSERT/DELETE
@@ -227,19 +226,20 @@ class Statement
                 }
             }
         } else {
-            // Support for single, scalar parameters
+            // Support for single, scalar parameters. We can skip isAssoc() check
+            $bol_assoc_check = TRUE;
             if(!is_array($arr_params)) {
                 $arr_params = array($arr_params);
+                $bol_assoc_check = FALSE;
             }
-            if($this->isAssoc($arr_params)) {
+            if($bol_assoc_check && $this->isAssoc($arr_params)) {
                 // Shorthand, NAMED parameters
                 $this->arr_raw_params = $arr_params;
                 $str_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_prepare_sql);
                 $this->str_prepare_sql = NULL;
                 $this->obj_stmt = $this->prepare($str_sql);
             } else {
-                // Shorthand, unnamed (i.e. numerically indexed)
-                // No "preg_replace" needed - parameters must be passed in the correct order
+                // Shorthand, unnamed (i.e. numerically indexed) - parameters must be passed in the correct order
                 $this->obj_stmt = $this->prepare($this->str_prepare_sql);
                 $this->applyIndexedParams($arr_params);
             }
@@ -354,12 +354,15 @@ class Statement
     }
 
     /**
-     * Bind a parameter, using Hungarian Notation or "Variable name hinting" for types so stick to
+     * Bind a parameter, optionally using Hungarian Notation or
+     * "Variable name prefix" type hinting - if so, stick to:
      *
-     * int = i,
-     * str = s,
-     * blb = b,
-     * dbl = d
+     * int_* = i (Integers)
+     * str_* = s (Strings)
+     * dbl_* = d (Floats)
+     * blb_* = b (Blob/Binary)
+     *
+     * Also called internally by the bind<Type>() methods
      *
      * @param $str_key
      * @param $mix_val
@@ -476,7 +479,7 @@ class Statement
             $this->arr_bind_params[] = & $this->arr_raw_params[$str_name];
             return '?';
         }
-        throw new \InvalidArgumentException("Not enough or incorrect named parameters");
+        throw new \InvalidArgumentException("Named parameter not found when looking for: " . $str_name);
     }
 
     /**
