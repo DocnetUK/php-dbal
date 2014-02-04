@@ -1,5 +1,5 @@
 {
-    "name": "docnet/php-db-wip",
+    "name": "docnet/php-dbal",
     "description": "A library which wraps mysqli into a fluent, easy-to-use set of classes.",
     "authors": [
         {
