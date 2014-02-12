@@ -451,7 +451,7 @@ class Statement
     private function applyNamedParam($arr_matches)
     {
         $str_name = $arr_matches[1];
-        if (isset($this->arr_raw_params[$str_name])) {
+        if(isset($this->arr_raw_params[$str_name]) || array_key_exists($str_name, $this->arr_raw_params)) {
             if (isset($this->arr_raw_types[$str_name])) {
                 // Hard typed
                 $this->str_bind_string .= $this->arr_raw_types[$str_name];
