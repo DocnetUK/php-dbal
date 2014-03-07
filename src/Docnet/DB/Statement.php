@@ -91,6 +91,13 @@ class Statement
     private $arr_bind_params = array();
 
     /**
+     * Use functions only supported by mysqlnd?
+     *
+     * @var bool
+     */
+    private $bol_use_mysqlnd = FALSE;
+
+    /**
      * The class into which results will be hydrated (presumably triggering
      * the magic __set method in the process)
      *
@@ -140,6 +147,7 @@ class Statement
         $this->str_sql = $str_sql;
         $this->int_state = self::STATE_INIT;
         $this->str_result_class = $str_result_class;
+        $this->bol_use_mysqlnd = extension_loaded('mysqlnd');
         self::$int_statement++;
     }
 
@@ -162,7 +170,7 @@ class Statement
      */
     public function fetchAll($arr_params = NULL)
     {
-        return $this->processAndfetch($arr_params, DB::FETCH_MODE_ALL);
+        return $this->processAndFetch($arr_params, DB::FETCH_MODE_ALL);
     }
 
     /**
@@ -214,7 +222,7 @@ class Statement
     private function process($arr_params = NULL)
     {
         if (NULL === $arr_params) {
-            if($this->str_sql) {
+            if ($this->str_sql) {
                 if ($this->int_state === self::STATE_BOUND) {
                     // The NAMED parameters have already been bound to this object using bind*() methods
                     $this->str_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_sql);
@@ -227,7 +235,7 @@ class Statement
             }
         } else {
             $this->arr_raw_params = $arr_params;
-            if(!is_array($this->arr_raw_params)) {
+            if (!is_array($this->arr_raw_params)) {
                 // Support for single, scalar parameters.
                 $this->str_bind_string = $this->getBindType($this->arr_raw_params);
                 $this->arr_bind_params[] = & $this->arr_raw_params;
@@ -275,9 +283,6 @@ class Statement
     /**
      * Process & Fetch ONE or ALL results
      *
-     * Note: seems you cannot pass NULL or blank string to fetch_object()
-     * you must actually NOT pass anything
-     *
      * @param array $arr_params
      * @param int $int_fetch_mode
      * @return array|object|null
@@ -287,6 +292,24 @@ class Statement
         if (!$this->process($arr_params)) {
             return NULL;
         }
+        if ($this->bol_use_mysqlnd) {
+            return $this->fetchNative($int_fetch_mode);
+        } else {
+            return $this->fetchOldSchool($int_fetch_mode);
+        }
+    }
+
+    /**
+     * Fetch using mysql native driver functions
+     *
+     * Note: seems you CANNOT pass NULL or blank string to fetch_object()
+     * you must actually NOT pass anything
+     *
+     * @param $int_fetch_mode
+     * @return array|object|\stdClass
+     */
+    private function fetchNative($int_fetch_mode)
+    {
         /** @var  $obj_result \mysqli_result */
         $obj_result = $this->obj_stmt->get_result();
         if (DB::FETCH_MODE_ONE === $int_fetch_mode) {
@@ -308,6 +331,49 @@ class Statement
             }
         }
         $obj_result->free();
+        return $mix_data;
+    }
+
+    /**
+     * Fetch for non-mysqlnd environments
+     *
+     * @todo review support for custom classes
+     * @todo review pros/cons of using store_result()
+     * @todo fix statements using AS
+     *
+     * @param $int_fetch_mode
+     * @return array|null|object|\stdClass
+     */
+    private function fetchOldSchool($int_fetch_mode)
+    {
+        $this->obj_stmt->store_result();
+        $obj_meta = $this->obj_stmt->result_metadata();
+        $arr_fields = $obj_meta->fetch_fields();
+        $obj_result = (NULL !== $this->str_result_class ? new $this->str_result_class() : new \stdClass());
+        $arr_bind_fields = array();
+        foreach ($arr_fields as $obj_field) {
+            $arr_bind_fields[] = & $obj_result->{$obj_field->name};
+        }
+        call_user_func_array(array($this->obj_stmt, 'bind_result'), $arr_bind_fields);
+        if (DB::FETCH_MODE_ONE === $int_fetch_mode) {
+            if ($this->obj_stmt->fetch()) {
+                $mix_data = $obj_result;
+            } else {
+                $mix_data = NULL;
+            }
+        } else {
+            $mix_data = array();
+            while ($this->obj_stmt->fetch()) {
+                // Manual clone method - nasty, but required because of all the binding references
+                // to avoid each row being === the last row in the result set
+                $obj_row = (NULL !== $this->str_result_class ? new $this->str_result_class() : new \stdClass());
+                foreach ($arr_fields as $obj_field) {
+                    $obj_row->{$obj_field->name} = $obj_result->{$obj_field->name};
+                }
+                $mix_data[] = $obj_row;
+            }
+        }
+        $this->obj_stmt->free_result();
         return $mix_data;
     }
 
@@ -420,7 +486,7 @@ class Statement
      */
     public function getInsertId()
     {
-        if($this->obj_stmt) {
+        if ($this->obj_stmt) {
             return $this->obj_stmt->insert_id;
         }
         return NULL;
@@ -433,7 +499,7 @@ class Statement
      */
     public function getAffectedRows()
     {
-        if($this->obj_stmt) {
+        if ($this->obj_stmt) {
             return $this->obj_stmt->affected_rows;
         }
         return NULL;
@@ -451,11 +517,11 @@ class Statement
     private function applyNamedParam($arr_matches)
     {
         $str_name = $arr_matches[1];
-        if(isset($this->arr_raw_params[$str_name]) || array_key_exists($str_name, $this->arr_raw_params)) {
+        if (isset($this->arr_raw_params[$str_name]) || array_key_exists($str_name, $this->arr_raw_params)) {
             if (isset($this->arr_raw_types[$str_name])) {
                 // Hard typed
                 $this->str_bind_string .= $this->arr_raw_types[$str_name];
-            } elseif(in_array(substr($str_name, 0, 4), array('int_', 'str_', 'dbl_', 'blb_'))) {
+            } elseif (in_array(substr($str_name, 0, 4), array('int_', 'str_', 'dbl_', 'blb_'))) {
                 // Type hinted
                 $this->str_bind_string .= $str_name[0];
             } else {
