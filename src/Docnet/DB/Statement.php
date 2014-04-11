@@ -551,7 +551,8 @@ class Statement
      */
     private function isAssoc(array $arr)
     {
-        return (gettype(array_keys($arr)[0]) == "string");
+        $arr_keys = array_keys($arr);
+        return (gettype($arr_keys[0]) == "string");
     }
 
     /**
