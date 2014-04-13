@@ -95,6 +95,7 @@ class DB
         if (!$this->obj_db->commit()) {
             throw new \Exception("MySQL failed to commit the transaction");
         }
+        $this->bol_in_transaction = FALSE;
         return $this;
     }
 
@@ -113,6 +114,7 @@ class DB
         if (!$this->obj_db->rollback()) {
             throw new \Exception("MySQL failed to rollback the transaction");
         }
+        $this->bol_in_transaction = FALSE;
         return $this;
     }
 
