@@ -62,16 +62,26 @@ class DB
      *
      * @returns \Docnet\Db
      * @throws \Exception if mysqli::begin_transaction() returned false
+     * @since 19/May/14 support for PHP 5.4 using query('BEGIN')
      */
     public function begin()
     {
         if ($this->bol_in_transaction) {
             return $this;
         }
-        if (!$this->obj_db->begin_transaction()) {
-            throw new \Exception("Failed to start a transaction");
+        
+        if (version_compare(PHP_VERSION, '5.5.0') >= 0) {
+            $bol_success = $this->obj_db->begin_transaction();
+        } else {
+            $bol_success = $this->obj_db->query('BEGIN');
         }
-        $this->bol_in_transaction = true;
+        
+        if ($bol_success) {
+            $this->bol_in_transaction = true;            
+        } else {
+            throw new \Exception("Failed to start a transaction");
+        }            
+        
         return $this;
     }
 
