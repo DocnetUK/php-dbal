@@ -70,7 +70,7 @@ class DB
             return $this;
         }
         
-        if (version_compare(PHP_VERSION, '5.5.0') >= 0) {
+        if (PHP_VERSION_ID >= 50500) {
             $bol_success = $this->obj_db->begin_transaction();
         } else {
             $bol_success = $this->obj_db->query('BEGIN');
