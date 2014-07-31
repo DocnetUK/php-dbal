@@ -1,6 +1,9 @@
 {
     "name": "docnet/php-dbal",
+    "type": "library",
     "description": "A library which wraps mysqli into a fluent, easy-to-use set of classes.",
+    "keywords": ["docnet", "mysqli"],
+    "homepage": "https://github.com/DocnetUK/php-dbal",
     "authors": [
         {
             "name": "Docnet",
