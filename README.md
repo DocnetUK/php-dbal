@@ -165,6 +165,9 @@ The following methods are available
 - `prepare()` which returns a new `Statement` object when called
 - `query()`
 - `escape()`
+- `begin()` Transaction support
+- `commit()` Transaction support
+- `rollback()` Transaction support
 
 ### Statement Class ###
 
