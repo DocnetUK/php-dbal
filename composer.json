@@ -4,6 +4,7 @@
     "description": "A library which wraps mysqli into a fluent, easy-to-use set of classes.",
     "keywords": ["docnet", "mysqli"],
     "homepage": "https://github.com/DocnetUK/php-dbal",
+    "license": "Apache-2.0",
     "authors": [
         {
             "name": "Docnet",
