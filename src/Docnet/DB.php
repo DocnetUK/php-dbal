@@ -133,13 +133,17 @@ class DB
      *
      * @param $str_sql
      * @param $arr_params
-     * @return integer Insert ID
+     * @return integer Insert ID or TRUE/FALSE if no ID was generated
      * @see update()
      */
     public function insert($str_sql, $arr_params) {
         $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
-        $obj_stmt->insert($arr_params);
-        return $obj_stmt->getInsertId();
+        $bol_success = (bool)$obj_stmt->insert($arr_params);
+        $int_id = $obj_stmt->getInsertId();
+        if($int_id > 0) {
+            return $int_id;
+        }
+        return $bol_success;
     }
 
     /**
