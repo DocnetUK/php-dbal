@@ -221,7 +221,7 @@ class Statement
      */
     private function process($arr_params = NULL)
     {
-        if (NULL === $arr_params) {
+        if (NULL === $arr_params || (is_array($arr_params) && count($arr_params) == 0)) {
             if ($this->str_sql) {
                 if ($this->int_state === self::STATE_BOUND) {
                     // The NAMED parameters have already been bound to this object using bind*() methods
