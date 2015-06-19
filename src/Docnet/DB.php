@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright 2014 Docnet
+ * Copyright 2015 Docnet
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
  */
 
 namespace Docnet;
+use Docnet\DB\ConnectionSettingsInterface;
 
 /**
  * DB stuff
@@ -37,18 +38,21 @@ class DB
     private $obj_db = NULL;
 
     /**
+     * Are we in a transaction?
+     *
      * @var bool
      */
     private $bol_in_transaction = false;
 
     /**
-     * Connect on construction
+     * Connection settings required on construction
      *
+     * @param DB\ConnectionSettingsInterface $obj_settings
      * @throws \Exception
      */
-    public function __construct($str_host, $str_user, $str_pass, $str_db = NULL, $int_port = NULL, $int_socket = NULL)
+    public function __construct(ConnectionSettingsInterface $obj_settings)
     {
-        $this->obj_db = new \mysqli($str_host, $str_user, $str_pass, $str_db, $int_port, $int_socket);
+        $this->obj_db = new \mysqli($obj_settings->getHost(), $obj_settings->getUser(), $obj_settings->getPass(), $obj_settings->getDbName(), $obj_settings->getPort(), $obj_settings->getSocket());
         if ($this->obj_db->connect_error) {
             throw new \Exception('Connect Error (' . $this->obj_db->connect_errno . ') ' . $this->obj_db->connect_error);
         }

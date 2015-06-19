@@ -15,12 +15,9 @@
  * limitations under the License.
  */
 
-require('../src/Docnet/DB.php');
-require('../src/Docnet/DB/Statement.php');
-require('../src/Docnet/DB/Model.php');
+require('../vendor/autoload.php');
 
-$obj_db = new \Docnet\DB('127.0.0.1', 'root', 'letmein', 'dbCluster');
-
+$obj_db = new \Docnet\DB(new \Docnet\DB\ConnectionSettings('127.0.0.1', 'root', 'letmein', 'dbCluster'));
 $pad = 40;
 
 $_SERVER['db'] = $obj_db;

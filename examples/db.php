@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright 2014 Docnet
+ * Copyright 2015 Docnet
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-require('../src/Docnet/DB.php');
-require('../src/Docnet/DB/Statement.php');
-require('../src/Docnet/DB/Model.php');
+require('../vendor/autoload.php');
 
-$obj_db = new \Docnet\DB('127.0.0.1', 'root', 'letmein', 'dbCluster');
+$obj_db = new \Docnet\DB(new \Docnet\DB\ConnectionSettings('127.0.0.1', 'root', 'letmein', 'dbCluster'));
 $arr_objects = array();
 
 echo round(memory_get_usage()/1024/1024, 2) . "MB\n";
@@ -28,6 +26,7 @@ echo round(memory_get_usage()/1024/1024, 2) . "MB\n";
  * Simple - no parameters
  */
 print_r($obj_db->fetchOne("SELECT * FROM tblServer"));
+
 /**
  * Statement/bind Type 1 - indexed parameters
  */

@@ -17,7 +17,8 @@
     "autoload": {
         "classmap": [
             "src/"
-        ]
+        ],
+        "psr-4": {"Docnet\\": "src/Docnet/"}
     },
     "include-path": ["src/"]
 }
