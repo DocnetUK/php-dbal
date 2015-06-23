@@ -16,6 +16,7 @@
  */
 
 namespace Docnet;
+
 use Docnet\DB\ConnectionSettingsInterface;
 
 /**
@@ -35,7 +36,7 @@ class DB
     /**
      * @var \mysqli
      */
-    private $obj_db = NULL;
+    private $obj_db = null;
 
     /**
      * Are we in a transaction?
@@ -52,7 +53,8 @@ class DB
      */
     public function __construct(ConnectionSettingsInterface $obj_settings)
     {
-        $this->obj_db = new \mysqli($obj_settings->getHost(), $obj_settings->getUser(), $obj_settings->getPass(), $obj_settings->getDbName(), $obj_settings->getPort(), $obj_settings->getSocket());
+        $this->obj_db = new \mysqli($obj_settings->getHost(), $obj_settings->getUser(), $obj_settings->getPass(),
+           $obj_settings->getDbName(), $obj_settings->getPort(), $obj_settings->getSocket());
         if ($this->obj_db->connect_error) {
             throw new \Exception('Connect Error (' . $this->obj_db->connect_errno . ') ' . $this->obj_db->connect_error);
         }
@@ -73,19 +75,19 @@ class DB
         if ($this->bol_in_transaction) {
             return $this;
         }
-        
+
         if (PHP_VERSION_ID >= 50500) {
             $bol_success = $this->obj_db->begin_transaction();
         } else {
             $bol_success = $this->obj_db->query('BEGIN');
         }
-        
+
         if ($bol_success) {
-            $this->bol_in_transaction = true;            
+            $this->bol_in_transaction = true;
         } else {
             throw new \Exception("Failed to start a transaction");
-        }            
-        
+        }
+
         return $this;
     }
 
@@ -109,7 +111,8 @@ class DB
         if (!$this->obj_db->commit()) {
             throw new \Exception("MySQL failed to commit the transaction");
         }
-        $this->bol_in_transaction = FALSE;
+        $this->bol_in_transaction = false;
+
         return $this;
     }
 
@@ -128,7 +131,8 @@ class DB
         if (!$this->obj_db->rollback()) {
             throw new \Exception("MySQL failed to rollback the transaction");
         }
-        $this->bol_in_transaction = FALSE;
+        $this->bol_in_transaction = false;
+
         return $this;
     }
 
@@ -140,13 +144,15 @@ class DB
      * @return integer Insert ID or TRUE/FALSE if no ID was generated, based on the rows affected being > 0
      * @see update()
      */
-    public function insert($str_sql, $arr_params) {
+    public function insert($str_sql, $arr_params)
+    {
         $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
         $obj_stmt->insert($arr_params);
         $int_id = $obj_stmt->getInsertId();
-        if($int_id > 0) {
+        if ($int_id > 0) {
             return $int_id;
         }
+
         return ($obj_stmt->getAffectedRows() > 0);
     }
 
@@ -159,9 +165,11 @@ class DB
      * @param $arr_params
      * @return int
      */
-    public function update($str_sql, $arr_params) {
+    public function update($str_sql, $arr_params)
+    {
         $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
         $obj_stmt->update($arr_params);
+
         return $obj_stmt->getAffectedRows();
     }
 
@@ -173,9 +181,11 @@ class DB
      * @param $arr_params
      * @return int
      */
-    public function delete($str_sql, $arr_params) {
+    public function delete($str_sql, $arr_params)
+    {
         $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
         $obj_stmt->delete($arr_params);
+
         return $obj_stmt->getAffectedRows();
     }
 
@@ -188,7 +198,7 @@ class DB
      * this query)
      * @return Array|NULL
      */
-    public function fetchAll($str_sql, $arr_params = NULL, $str_result_class = NULL)
+    public function fetchAll($str_sql, $arr_params = null, $str_result_class = null)
     {
         return $this->delegateFetch($str_sql, $arr_params, $str_result_class, self::FETCH_MODE_ALL);
     }
@@ -202,7 +212,7 @@ class DB
      * this query)
      * @return Array|NULL
      */
-    public function fetchOne($str_sql, $arr_params = NULL, $str_result_class = NULL)
+    public function fetchOne($str_sql, $arr_params = null, $str_result_class = null)
     {
         return $this->delegateFetch($str_sql, $arr_params, $str_result_class, self::FETCH_MODE_ONE);
     }
@@ -236,12 +246,13 @@ class DB
      * @return \Docnet\DB\Statement
      * @throws \InvalidArgumentException
      */
-    public function prepare($str_sql = NULL)
+    public function prepare($str_sql = null)
     {
-        if(NULL === $str_sql) {
+        if (null === $str_sql) {
             throw new \InvalidArgumentException("SQL required for prepare() call");
         }
         $obj_stmt = new DB\Statement($this->obj_db, $str_sql);
+
         return $obj_stmt;
     }
 
