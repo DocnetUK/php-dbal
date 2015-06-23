@@ -19,48 +19,53 @@ namespace Docnet\DB;
 use Docnet\DB;
 
 /**
- * Class LazyDB
+ * Class HasDatabase
  *
  * @author Kamba Abudu <kabudu@docnet.nu>
- * @package Docnet\PSA\API\Traits
+ * @package Docnet\DB
  */
-class LazyDB
+trait HasDatabase
 {
     /**
-     * DB object
-     *
+     * @var LazyDb
+     */
+    protected $obj_lazy_db = null;
+
+    /**
      * @var DB
      */
-    private $obj_db = null;
+    protected $obj_db = null;
 
     /**
-     * DB connection settings object
+     * Set a lazy DB instance
      *
-     * @var ConnectionSettingsInterface
+     * @param LazyDb $obj_lazy_db
      */
-    private $obj_connection_settings = null;
-
-    /**
-     * Constructor
-     *
-     * @param ConnectionSettingsInterface $obj_connection_settings
-     */
-    public function __construct(ConnectionSettingsInterface $obj_connection_settings)
+    public function setLazyDb(LazyDb $obj_lazy_db)
     {
-        $this->obj_connection_settings = $obj_connection_settings;
+        $this->obj_lazy_db = $obj_lazy_db;
     }
 
     /**
-     * Get a DB instance
+     * Set a DB instance
+     *
+     * @param DB $obj_db
+     */
+    public function setDb(DB $obj_db)
+    {
+        $this->obj_db = $obj_db;
+    }
+
+    /**
+     * Get the DB instance
      *
      * @return DB
      */
-    public function getDb()
+    protected function getDb()
     {
-        if (null === $this->obj_db) {
-            $this->obj_db = new DB($this->obj_connection_settings);
+        if(null === $this->obj_db) {
+            $this->obj_db = $this->obj_lazy_db->getDb();
         }
-
         return $this->obj_db;
     }
 }
