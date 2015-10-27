@@ -6,7 +6,7 @@ Designed to wrap mysqli into a series of fast, secure and easy to use classes.
 
 Require line as follows
 
-`"docnet/php-dbal": "v2.0"`
+`"docnet/php-dbal": "v2.1"`
 
 ## Let's Connect ##
 
