@@ -193,10 +193,10 @@ class DB
      * Execute a query, return the results as an array
      *
      * @param String $str_sql
-     * @param Array $arr_params
+     * @param array $arr_params
      * @param String $str_result_class manually override result class (just for
      * this query)
-     * @return Array|NULL
+     * @return array|NULL
      */
     public function fetchAll($str_sql, $arr_params = null, $str_result_class = null)
     {
@@ -207,10 +207,10 @@ class DB
      * Execute a query, return the first result
      *
      * @param String $str_sql
-     * @param Array $arr_params
+     * @param array $arr_params
      * @param String $str_result_class manually override result class (just for
      * this query)
-     * @return Array|NULL
+     * @return array|NULL
      */
     public function fetchOne($str_sql, $arr_params = null, $str_result_class = null)
     {
@@ -224,7 +224,7 @@ class DB
      * @param null $arr_params
      * @param String $str_result_class
      * @param int $int_fetch_mode
-     * @return Array|NULL|void
+     * @return array|NULL|void
      */
     private function delegateFetch($str_sql, $arr_params, $str_result_class, $int_fetch_mode)
     {
@@ -276,6 +276,16 @@ class DB
     public function query($sql)
     {
         return $this->obj_db->query($sql);
+    }
+
+    /**
+     * Set db connection charset
+     * @param string $str_charset
+     * @return bool
+     */
+    public function setCharset($str_charset)
+    {
+        return $this->obj_db->set_charset($str_charset);
     }
 
     /**
