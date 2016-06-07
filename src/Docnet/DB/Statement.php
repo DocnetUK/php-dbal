@@ -273,7 +273,7 @@ class Statement
                $this->obj_db->errno,
                $this->obj_db->error
             );
-            DB\Exception\Factory::build($str_message, $this->obj_db->errno);
+            throw DB\Exception\Factory::build($str_message, $this->obj_db->errno);
         }
         $this->int_state = self::STATE_PREPARED;
         $this->str_sql = NULL;
