@@ -24,10 +24,10 @@ class Factory
       switch ($intCode) {
 
          case self::CODE_MYSQL_GONE_AWAY:
-            throw new DatabaseConnectionException($strMessage, $intCode);
+            return new DatabaseConnectionException($strMessage, $intCode);
 
          default:
-            throw new \Exception($strMessage, $intCode);
+            return new \Exception($strMessage, $intCode);
 
       }
 
