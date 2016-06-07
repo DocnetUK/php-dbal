@@ -1,6 +1,6 @@
 <?php
 /**
- * Handler.php
+ * Factory.php
  *
  * @author David Wilcock (dwilcock@doc-net.com)
  * @copyright Venditan Limited 2016
@@ -8,7 +8,7 @@
 
 namespace Docnet\DB\Exception;
 
-class Handler
+class Factory
 {
 
    const CODE_MYSQL_GONE_AWAY = 2006;
@@ -19,7 +19,7 @@ class Handler
     * @throws DatabaseConnectionException
     * @throws \Exception
     */
-   public static function deliver($strMessage, $intCode = null) {
+   public static function build($strMessage, $intCode = null) {
 
       switch ($intCode) {
 

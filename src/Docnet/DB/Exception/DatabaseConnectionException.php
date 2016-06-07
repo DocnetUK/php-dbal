@@ -8,7 +8,6 @@
 
 namespace Docnet\DB\Exception;
 
-
 class DatabaseConnectionException extends \Exception
 {
 
