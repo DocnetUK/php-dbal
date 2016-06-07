@@ -268,13 +268,12 @@ class Statement
         self::$int_prepare++;
         $this->obj_stmt = $this->obj_db->prepare($this->str_sql);
         if (!$this->obj_stmt) {
-            throw new \Exception(
-                sprintf(
-                    'Error preparing statement - Code: %d, Message: "%s"',
-                    $this->obj_db->errno,
-                    $this->obj_db->error
-                )
+            $str_message = sprintf(
+               'Error preparing statement - Code: %d, Message: "%s"',
+               $this->obj_db->errno,
+               $this->obj_db->error
             );
+            DB\Exception\Handler::deliver($str_message, $this->obj_db->errno);
         }
         $this->int_state = self::STATE_PREPARED;
         $this->str_sql = NULL;
