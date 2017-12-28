@@ -154,8 +154,8 @@ class Statement
     /**
      * Execute a query, return the first result.
      *
-     * @param Array $arr_params
-     * @return Array|NULL
+     * @param array $arr_params
+     * @return array|object|null
      */
     public function fetchOne($arr_params = NULL)
     {
@@ -165,7 +165,7 @@ class Statement
     /**
      * Execute a query, return ALL the results.
      *
-     * @param Array $arr_params
+     * @param array $arr_params
      * @return array|NULL
      */
     public function fetchAll($arr_params = NULL)
