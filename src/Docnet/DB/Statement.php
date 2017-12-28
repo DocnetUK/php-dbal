@@ -177,7 +177,7 @@ class Statement
      * Execute an update statement
      *
      * @param array $arr_params
-     * @return array|null|object
+     * @return bool
      */
     public function update(array $arr_params = NULL)
     {
@@ -188,7 +188,7 @@ class Statement
      * Execute an insert statement
      *
      * @param array $arr_params
-     * @return array|null|object
+     * @return bool
      */
     public function insert(array $arr_params = NULL)
     {
@@ -199,7 +199,7 @@ class Statement
      * Execute a delete statement
      *
      * @param array $arr_params
-     * @return array|null|object
+     * @return bool
      */
     public function delete(array $arr_params = NULL)
     {
@@ -217,7 +217,7 @@ class Statement
      * This method used by SELECT/UPDATE/INSERT/DELETE
      *
      * @param null $arr_params
-     * @return array|null|object
+     * @return bool
      * @throws \Exception if fails to process the prepared statement
      */
     private function process($arr_params = NULL)
@@ -256,7 +256,7 @@ class Statement
         $this->int_state = self::STATE_EXECUTED;
         self::$int_execute++;
 
-        $mix_result = $this->obj_stmt->execute();
+        $bol_result = $this->obj_stmt->execute();
 
         if ($this->obj_stmt->errno != 0) {
             $str_message = sprintf(
@@ -267,7 +267,7 @@ class Statement
             throw DB\Exception\Factory::build($str_message, $this->obj_stmt->errno);
         }
 
-        return $mix_result;
+        return $bol_result;
     }
 
     /**
