@@ -14,10 +14,9 @@ class Factory
    const CODE_MYSQL_GONE_AWAY = 2006;
 
    /**
-    * @param $strMessage
-    * @param null $intCode
-    * @throws DatabaseConnectionException
-    * @throws \Exception
+    * @param string $strMessage
+    * @param int|null $intCode
+    * @return \Exception
     */
    public static function build($strMessage, $intCode = null) {
 
