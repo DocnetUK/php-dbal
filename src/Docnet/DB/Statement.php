@@ -166,7 +166,7 @@ class Statement
      * Execute a query, return ALL the results.
      *
      * @param array $arr_params
-     * @return array|NULL
+     * @return array|null
      */
     public function fetchAll($arr_params = NULL)
     {
