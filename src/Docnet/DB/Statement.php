@@ -154,8 +154,8 @@ class Statement
     /**
      * Execute a query, return the first result.
      *
-     * @param Array $arr_params
-     * @return Array|NULL
+     * @param array $arr_params
+     * @return array|object|null
      */
     public function fetchOne($arr_params = NULL)
     {
@@ -165,8 +165,8 @@ class Statement
     /**
      * Execute a query, return ALL the results.
      *
-     * @param Array $arr_params
-     * @return array|NULL
+     * @param array $arr_params
+     * @return array|null
      */
     public function fetchAll($arr_params = NULL)
     {
@@ -177,7 +177,7 @@ class Statement
      * Execute an update statement
      *
      * @param array $arr_params
-     * @return array|null|object
+     * @return bool
      */
     public function update(array $arr_params = NULL)
     {
@@ -188,7 +188,7 @@ class Statement
      * Execute an insert statement
      *
      * @param array $arr_params
-     * @return array|null|object
+     * @return bool
      */
     public function insert(array $arr_params = NULL)
     {
@@ -199,7 +199,7 @@ class Statement
      * Execute a delete statement
      *
      * @param array $arr_params
-     * @return array|null|object
+     * @return bool
      */
     public function delete(array $arr_params = NULL)
     {
@@ -217,7 +217,8 @@ class Statement
      * This method used by SELECT/UPDATE/INSERT/DELETE
      *
      * @param null $arr_params
-     * @return array|null|object
+     * @return bool
+     * @throws \Exception if fails to process the prepared statement
      */
     private function process($arr_params = NULL)
     {
@@ -254,7 +255,19 @@ class Statement
         }
         $this->int_state = self::STATE_EXECUTED;
         self::$int_execute++;
-        return $this->obj_stmt->execute();
+
+        $bol_result = $this->obj_stmt->execute();
+
+        if ($this->obj_stmt->errno != 0) {
+            $str_message = sprintf(
+                'Error processing statement - Code: %d, Message: "%s"',
+                $this->obj_stmt->errno,
+                $this->obj_stmt->error
+            );
+            throw DB\Exception\Factory::build($str_message, $this->obj_stmt->errno);
+        }
+
+        return $bol_result;
     }
 
     /**
