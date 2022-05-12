@@ -52,14 +52,20 @@ class DB
      */
     public function __construct(ConnectionSettingsInterface $obj_settings)
     {
-        $this->obj_db = new \mysqli(
+        $this->obj_db = new \mysqli();
+
+        if (!$this->obj_db->real_connect(
             $obj_settings->getHost(),
             $obj_settings->getUser(),
             $obj_settings->getPass(),
             $obj_settings->getDbName(),
             $obj_settings->getPort(),
-            $obj_settings->getSocket()
-        );
+            $obj_settings->getSocket(),
+            $obj_settings->getFlags()
+        )) {
+            throw new \Exception('Connect Error (' . $this->obj_db->connect_errno . ') ' . $this->obj_db->connect_error);
+        }
+
         if ($this->obj_db->connect_error) {
             throw new \Exception('Connect Error (' . $this->obj_db->connect_errno . ') ' . $this->obj_db->connect_error);
         }

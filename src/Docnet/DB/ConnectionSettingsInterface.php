@@ -66,4 +66,11 @@ interface ConnectionSettingsInterface
      */
     public function getSocket();
 
+    /**
+     * Get connection flags to use
+     *
+     * @return int|null
+     */
+    public function getFlags();
+
 }

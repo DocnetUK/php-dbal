@@ -69,6 +69,13 @@ class ConnectionSettings implements ConnectionSettingsInterface
     private $str_socket = null;
 
     /**
+     * DB connection flags
+     *
+     * @var int|null
+     */
+    private $int_flags = null;
+
+    /**
      * Optionally Configure on construction
      *
      * @param string|null $str_host
@@ -77,6 +84,7 @@ class ConnectionSettings implements ConnectionSettingsInterface
      * @param string|null $str_db
      * @param string|null $str_port
      * @param string|null $str_socket
+     * @param int $int_flags
      */
     public function __construct(
         $str_host = null,
@@ -84,7 +92,8 @@ class ConnectionSettings implements ConnectionSettingsInterface
         $str_pass = null,
         $str_db = null,
         $str_port = null,
-        $str_socket = null
+        $str_socket = null,
+        $int_flags = null
     ) {
         $this->str_host = $str_host;
         $this->str_user = $str_user;
@@ -92,6 +101,7 @@ class ConnectionSettings implements ConnectionSettingsInterface
         $this->str_db = $str_db;
         $this->str_port = $str_port;
         $this->str_socket = $str_socket;
+        $this->int_flags = $int_flags;
     }
 
     /**
@@ -152,6 +162,16 @@ class ConnectionSettings implements ConnectionSettingsInterface
     public function getSocket()
     {
         return $this->str_socket;
+    }
+
+    /**
+     * Get the connection flags
+     *
+     * @return int|null
+     */
+    public function getFlags()
+    {
+        return $this->int_flags;
     }
 
     /**
@@ -223,6 +243,18 @@ class ConnectionSettings implements ConnectionSettingsInterface
     public function setSocket($str_socket)
     {
         $this->str_socket = $str_socket;
+        return $this;
+    }
+
+    /**
+     * Set the DB connection flags
+     *
+     * @param int|null $int_flags
+     * @return self
+     */
+    public function setFlags($int_flags)
+    {
+        $this->int_flags = $int_flags;
         return $this;
     }
 
