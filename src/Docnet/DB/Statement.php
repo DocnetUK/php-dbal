@@ -26,7 +26,6 @@ use \Docnet\DB;
  */
 class Statement
 {
-
     /**
      * States for our Statement class
      */
@@ -53,32 +52,32 @@ class Statement
      *
      * @var int
      */
-    private $int_state = NULL;
+    private $int_state = null;
 
     /**
      * @var \mysqli
      */
-    private $obj_db = NULL;
+    private $obj_db = null;
 
     /**
      * @var \mysqli_stmt
      */
-    private $obj_stmt = NULL;
+    private $obj_stmt = null;
 
     /**
      * @var string
      */
-    private $str_sql = NULL;
+    private $str_sql = null;
 
     /**
      * @var array
      */
-    private $arr_raw_params = array();
+    private $arr_raw_params = [];
 
     /**
      * @var array
      */
-    private $arr_raw_types = array();
+    private $arr_raw_types = [];
 
     /**
      * @var string
@@ -88,14 +87,14 @@ class Statement
     /**
      * @var array
      */
-    private $arr_bind_params = array();
+    private $arr_bind_params = [];
 
     /**
      * Use functions only supported by mysqlnd?
      *
      * @var bool
      */
-    private $bol_use_mysqlnd = FALSE;
+    private $bol_use_mysqlnd = false;
 
     /**
      * The class into which results will be hydrated (presumably triggering
@@ -103,7 +102,7 @@ class Statement
      *
      * @var string
      */
-    private $str_result_class = NULL;
+    private $str_result_class = null;
 
     /**
      * Member variables for statistics
@@ -122,17 +121,17 @@ class Statement
      *
      * @var array
      */
-    private $arr_bind_type_map = array(
-        "boolean"       => self::BIND_TYPE_INTEGER,
-        "integer"       => self::BIND_TYPE_INTEGER,
-        "double"        => self::BIND_TYPE_DOUBLE,
-        "string"        => self::BIND_TYPE_STRING,
-        "array"         => self::BIND_TYPE_STRING,
-        "object"        => self::BIND_TYPE_STRING,
-        "resource"      => self::BIND_TYPE_STRING,
-        "NULL"          => self::BIND_TYPE_STRING,
-        "unknown type"  => self::BIND_TYPE_STRING
-    );
+    private $arr_bind_type_map = [
+        "boolean" => self::BIND_TYPE_INTEGER,
+        "integer" => self::BIND_TYPE_INTEGER,
+        "double" => self::BIND_TYPE_DOUBLE,
+        "string" => self::BIND_TYPE_STRING,
+        "array" => self::BIND_TYPE_STRING,
+        "object" => self::BIND_TYPE_STRING,
+        "resource" => self::BIND_TYPE_STRING,
+        "NULL" => self::BIND_TYPE_STRING,
+        "unknown type" => self::BIND_TYPE_STRING,
+    ];
 
     /**
      * If SQL is passed, store for later preparation (it may have named params that need to be replaced)
@@ -141,7 +140,7 @@ class Statement
      * @param string $str_sql
      * @param string $str_result_class
      */
-    public function __construct(\mysqli $obj_db, $str_sql, $str_result_class = NULL)
+    public function __construct(\mysqli $obj_db, $str_sql, $str_result_class = null)
     {
         $this->obj_db = $obj_db;
         $this->str_sql = $str_sql;
@@ -157,7 +156,7 @@ class Statement
      * @param array $arr_params
      * @return array|object|null
      */
-    public function fetchOne($arr_params = NULL)
+    public function fetchOne($arr_params = null)
     {
         return $this->processAndFetch($arr_params, DB::FETCH_MODE_ONE);
     }
@@ -168,7 +167,7 @@ class Statement
      * @param array $arr_params
      * @return array|null
      */
-    public function fetchAll($arr_params = NULL)
+    public function fetchAll($arr_params = null)
     {
         return $this->processAndFetch($arr_params, DB::FETCH_MODE_ALL);
     }
@@ -179,7 +178,7 @@ class Statement
      * @param array $arr_params
      * @return bool
      */
-    public function update(array $arr_params = NULL)
+    public function update(array $arr_params = null)
     {
         return $this->process($arr_params);
     }
@@ -190,7 +189,7 @@ class Statement
      * @param array $arr_params
      * @return bool
      */
-    public function insert(array $arr_params = NULL)
+    public function insert(array $arr_params = null)
     {
         return $this->process($arr_params);
     }
@@ -201,7 +200,7 @@ class Statement
      * @param array $arr_params
      * @return bool
      */
-    public function delete(array $arr_params = NULL)
+    public function delete(array $arr_params = null)
     {
         return $this->process($arr_params);
     }
@@ -220,13 +219,20 @@ class Statement
      * @return bool
      * @throws \Exception if fails to process the prepared statement
      */
-    private function process($arr_params = NULL)
+    private function process($arr_params = null)
     {
-        if (NULL === $arr_params || (is_array($arr_params) && count($arr_params) == 0)) {
+        if (null === $arr_params || (is_array($arr_params) && count($arr_params) == 0)) {
             if ($this->str_sql) {
                 if ($this->int_state === self::STATE_BOUND) {
                     // The NAMED parameters have already been bound to this object using bind*() methods
-                    $this->str_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_sql);
+                    $this->str_sql = preg_replace_callback(
+                        self::NAMED_PARAM_REGEX,
+                        [
+                            $this,
+                            'applyNamedParam',
+                        ],
+                        $this->str_sql
+                    );
                     $this->prepare();
                     $this->bindParameters();
                 } elseif ($this->int_state === self::STATE_INIT) {
@@ -239,15 +245,22 @@ class Statement
             if (!is_array($this->arr_raw_params)) {
                 // Support for single, scalar parameters.
                 $this->str_bind_string = $this->getBindType($this->arr_raw_params);
-                $this->arr_bind_params[] = & $this->arr_raw_params;
+                $this->arr_bind_params[] = &$this->arr_raw_params;
             } elseif ($this->isAssoc($arr_params)) {
                 // Shorthand, NAMED parameters
-                $this->str_sql = preg_replace_callback(self::NAMED_PARAM_REGEX, array($this, 'applyNamedParam'), $this->str_sql);
+                $this->str_sql = preg_replace_callback(
+                    self::NAMED_PARAM_REGEX,
+                    [
+                        $this,
+                        'applyNamedParam',
+                    ],
+                    $this->str_sql
+                );
             } else {
                 // Shorthand, unnamed (i.e. numerically indexed) - parameters must be passed in the correct order
                 foreach ($this->arr_raw_params as $int_key => $mix_param) {
                     $this->str_bind_string .= $this->getBindType($mix_param);
-                    $this->arr_bind_params[] = & $this->arr_raw_params[$int_key];
+                    $this->arr_bind_params[] = &$this->arr_raw_params[$int_key];
                 }
             }
             $this->prepare();
@@ -282,14 +295,14 @@ class Statement
         $this->obj_stmt = $this->obj_db->prepare($this->str_sql);
         if (!$this->obj_stmt) {
             $str_message = sprintf(
-               'Error preparing statement - Code: %d, Message: "%s"',
-               $this->obj_db->errno,
-               $this->obj_db->error
+                'Error preparing statement - Code: %d, Message: "%s"',
+                $this->obj_db->errno,
+                $this->obj_db->error
             );
             throw DB\Exception\Factory::build($str_message, $this->obj_db->errno);
         }
         $this->int_state = self::STATE_PREPARED;
-        $this->str_sql = NULL;
+        $this->str_sql = null;
     }
 
     /**
@@ -302,7 +315,7 @@ class Statement
     private function processAndFetch($arr_params, $int_fetch_mode)
     {
         if (!$this->process($arr_params)) {
-            return NULL;
+            return null;
         }
         if ($this->bol_use_mysqlnd) {
             return $this->fetchNative($int_fetch_mode);
@@ -331,7 +344,7 @@ class Statement
                 $mix_data = $obj_result->fetch_object();
             }
         } else {
-            $mix_data = array();
+            $mix_data = [];
             if ($this->str_result_class) {
                 while ($obj_row = $obj_result->fetch_object($this->str_result_class)) {
                     $mix_data[] = $obj_row;
@@ -349,36 +362,36 @@ class Statement
     /**
      * Fetch for non-mysqlnd environments
      *
-     * @todo review support for custom classes
-     * @todo review pros/cons of using store_result()
-     * @todo fix statements using AS
-     *
      * @param $int_fetch_mode
      * @return array|null|object|\stdClass
+     * @todo fix statements using AS
+     *
+     * @todo review support for custom classes
+     * @todo review pros/cons of using store_result()
      */
     private function fetchOldSchool($int_fetch_mode)
     {
         $this->obj_stmt->store_result();
         $obj_meta = $this->obj_stmt->result_metadata();
         $arr_fields = $obj_meta->fetch_fields();
-        $obj_result = (NULL !== $this->str_result_class ? new $this->str_result_class() : new \stdClass());
-        $arr_bind_fields = array();
+        $obj_result = (null !== $this->str_result_class ? new $this->str_result_class() : new \stdClass());
+        $arr_bind_fields = [];
         foreach ($arr_fields as $obj_field) {
-            $arr_bind_fields[] = & $obj_result->{$obj_field->name};
+            $arr_bind_fields[] = &$obj_result->{$obj_field->name};
         }
-        call_user_func_array(array($this->obj_stmt, 'bind_result'), $arr_bind_fields);
+        call_user_func_array([$this->obj_stmt, 'bind_result'], $arr_bind_fields);
         if (DB::FETCH_MODE_ONE === $int_fetch_mode) {
             if ($this->obj_stmt->fetch()) {
                 $mix_data = $obj_result;
             } else {
-                $mix_data = NULL;
+                $mix_data = null;
             }
         } else {
-            $mix_data = array();
+            $mix_data = [];
             while ($this->obj_stmt->fetch()) {
                 // Manual clone method - nasty, but required because of all the binding references
                 // to avoid each row being === the last row in the result set
-                $obj_row = (NULL !== $this->str_result_class ? new $this->str_result_class() : new \stdClass());
+                $obj_row = (null !== $this->str_result_class ? new $this->str_result_class() : new \stdClass());
                 foreach ($arr_fields as $obj_field) {
                     $obj_row->{$obj_field->name} = $obj_result->{$obj_field->name};
                 }
@@ -408,9 +421,9 @@ class Statement
      * @return $this
      * @throws \Exception
      */
-    public function setResultClass($str_result_class = NULL)
+    public function setResultClass($str_result_class = null)
     {
-        if (NULL === $str_result_class || class_exists($str_result_class)) {
+        if (null === $str_result_class || class_exists($str_result_class)) {
             $this->str_result_class = $str_result_class;
             return $this;
         }
@@ -501,7 +514,7 @@ class Statement
         if ($this->obj_stmt) {
             return $this->obj_stmt->insert_id;
         }
-        return NULL;
+        return null;
     }
 
     /**
@@ -514,7 +527,7 @@ class Statement
         if ($this->obj_stmt) {
             return $this->obj_stmt->affected_rows;
         }
-        return NULL;
+        return null;
     }
 
     /**
@@ -533,14 +546,14 @@ class Statement
             if (isset($this->arr_raw_types[$str_name])) {
                 // Hard typed
                 $this->str_bind_string .= $this->arr_raw_types[$str_name];
-            } elseif (in_array(substr($str_name, 0, 4), array('int_', 'str_', 'dbl_', 'blb_'))) {
+            } elseif (in_array(substr($str_name, 0, 4), ['int_', 'str_', 'dbl_', 'blb_'])) {
                 // Type hinted
                 $this->str_bind_string .= $str_name[0];
             } else {
                 // Determine type from data
                 $this->str_bind_string .= $this->getBindType($this->arr_raw_params[$str_name]);
             }
-            $this->arr_bind_params[] = & $this->arr_raw_params[$str_name];
+            $this->arr_bind_params[] = &$this->arr_raw_params[$str_name];
             return '?';
         }
         throw new \InvalidArgumentException("Named parameter not found when looking for: " . $str_name);
@@ -552,7 +565,7 @@ class Statement
     private function bindParameters()
     {
         array_unshift($this->arr_bind_params, $this->str_bind_string);
-        call_user_func_array(array($this->obj_stmt, 'bind_param'), $this->arr_bind_params);
+        call_user_func_array([$this->obj_stmt, 'bind_param'], $this->arr_bind_params);
     }
 
     /**
@@ -574,11 +587,11 @@ class Statement
      */
     public static function getStats()
     {
-        return array(
+        return [
             'objects' => self::$int_statement,
             'prepare' => self::$int_prepare,
-            'execute' => self::$int_execute
-        );
+            'execute' => self::$int_execute,
+        ];
     }
 
     /**

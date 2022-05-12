@@ -10,25 +10,20 @@ namespace Docnet\DB\Exception;
 
 class Factory
 {
+    const CODE_MYSQL_GONE_AWAY = 2006;
 
-   const CODE_MYSQL_GONE_AWAY = 2006;
-
-   /**
-    * @param string $strMessage
-    * @param int|null $intCode
-    * @return \Exception
-    */
-   public static function build($strMessage, $intCode = null) {
-
-      switch ($intCode) {
-
-         case self::CODE_MYSQL_GONE_AWAY:
-            return new DatabaseConnectionException($strMessage, $intCode);
-
-         default:
-            return new \Exception($strMessage, $intCode);
-
-      }
-
-   }
+    /**
+     * @param string $strMessage
+     * @param int|null $intCode
+     * @return \Exception
+     */
+    public static function build($strMessage, $intCode = null)
+    {
+        switch ($intCode) {
+            case self::CODE_MYSQL_GONE_AWAY:
+                return new DatabaseConnectionException($strMessage, $intCode);
+            default:
+                return new \Exception($strMessage, $intCode);
+        }
+    }
 }

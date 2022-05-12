@@ -24,49 +24,49 @@ namespace Docnet\DB;
  *
  * @author Tom Walder <tom@docnet.nu>
  */
-class ConnectionSettings implements ConnectionSettingsInterface {
-
+class ConnectionSettings implements ConnectionSettingsInterface
+{
     /**
      * DB host
      *
      * @var string|null
      */
-    private $str_host = NULL;
+    private $str_host = null;
 
     /**
      * DB user
      *
      * @var string|null
      */
-    private $str_user = NULL;
+    private $str_user = null;
 
     /**
      * DB pass
      *
      * @var string|null
      */
-    private $str_pass = NULL;
+    private $str_pass = null;
 
     /**
      * DB name
      *
      * @var string|null
      */
-    private $str_db = NULL;
+    private $str_db = null;
 
     /**
      * DB port
      *
      * @var string|null
      */
-    private $str_port = NULL;
+    private $str_port = null;
 
     /**
      * DB socket
      *
      * @var string|null
      */
-    private $str_socket = NULL;
+    private $str_socket = null;
 
     /**
      * Optionally Configure on construction
@@ -78,8 +78,14 @@ class ConnectionSettings implements ConnectionSettingsInterface {
      * @param string|null $str_port
      * @param string|null $str_socket
      */
-    public function __construct($str_host = NULL, $str_user = NULL, $str_pass = NULL, $str_db = NULL, $str_port = NULL, $str_socket = NULL)
-    {
+    public function __construct(
+        $str_host = null,
+        $str_user = null,
+        $str_pass = null,
+        $str_db = null,
+        $str_port = null,
+        $str_socket = null
+    ) {
         $this->str_host = $str_host;
         $this->str_user = $str_user;
         $this->str_pass = $str_pass;

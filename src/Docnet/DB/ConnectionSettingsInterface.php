@@ -22,8 +22,8 @@ namespace Docnet\DB;
  *
  * @author Tom Walder <tom@docnet.nu>
  */
-interface ConnectionSettingsInterface {
-
+interface ConnectionSettingsInterface
+{
     /**
      * Get the DB host
      *

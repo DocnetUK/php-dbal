@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 namespace Docnet\DB;
 
 use Docnet\DB;
@@ -63,7 +64,7 @@ trait HasDatabase
      */
     protected function getDb()
     {
-        if(null === $this->obj_db) {
+        if (null === $this->obj_db) {
             $this->obj_db = $this->obj_lazy_db->getDb();
         }
         return $this->obj_db;

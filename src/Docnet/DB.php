@@ -26,7 +26,6 @@ use Docnet\DB\ConnectionSettingsInterface;
  */
 class DB
 {
-
     /**
      * Fetch modes
      */
@@ -53,8 +52,14 @@ class DB
      */
     public function __construct(ConnectionSettingsInterface $obj_settings)
     {
-        $this->obj_db = new \mysqli($obj_settings->getHost(), $obj_settings->getUser(), $obj_settings->getPass(),
-           $obj_settings->getDbName(), $obj_settings->getPort(), $obj_settings->getSocket());
+        $this->obj_db = new \mysqli(
+            $obj_settings->getHost(),
+            $obj_settings->getUser(),
+            $obj_settings->getPass(),
+            $obj_settings->getDbName(),
+            $obj_settings->getPort(),
+            $obj_settings->getSocket()
+        );
         if ($this->obj_db->connect_error) {
             throw new \Exception('Connect Error (' . $this->obj_db->connect_errno . ') ' . $this->obj_db->connect_error);
         }
@@ -96,12 +101,10 @@ class DB
      * It's important that the calling code knows it's not in a transaction if
      * the developer assumed that they were.
      *
-     * @todo Are we scared that bol_in_transaction might get out of sync and
-     * prevent legit commits?
-     *
      * @return \Docnet\DB
      * @throws \Exception if we're not in a transaction
      * @throws \Exception if the driver reports that the commit failed
+     * @todo Are we scared that bol_in_transaction might get out of sync and prevent legit commits?
      */
     public function commit()
     {
@@ -280,6 +283,7 @@ class DB
 
     /**
      * Set db connection charset
+     *
      * @param string $str_charset
      * @return bool
      */
@@ -297,5 +301,4 @@ class DB
             $this->obj_db->close();
         }
     }
-
 }
