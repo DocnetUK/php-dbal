@@ -69,7 +69,7 @@ interface ConnectionSettingsInterface
     /**
      * Get connection flags to use
      *
-     * @return int|null
+     * @return int
      */
     public function getFlags();
 
