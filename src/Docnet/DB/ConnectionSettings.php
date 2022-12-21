@@ -71,9 +71,9 @@ class ConnectionSettings implements ConnectionSettingsInterface
     /**
      * DB connection flags
      *
-     * @var int|null
+     * @var int
      */
-    private $int_flags = null;
+    private $int_flags = 0;
 
     /**
      * Optionally Configure on construction
@@ -93,7 +93,7 @@ class ConnectionSettings implements ConnectionSettingsInterface
         $str_db = null,
         $str_port = null,
         $str_socket = null,
-        $int_flags = null
+        $int_flags = 0
     ) {
         $this->str_host = $str_host;
         $this->str_user = $str_user;
@@ -167,7 +167,7 @@ class ConnectionSettings implements ConnectionSettingsInterface
     /**
      * Get the connection flags
      *
-     * @return int|null
+     * @return int
      */
     public function getFlags()
     {
@@ -249,7 +249,7 @@ class ConnectionSettings implements ConnectionSettingsInterface
     /**
      * Set the DB connection flags
      *
-     * @param int|null $int_flags
+     * @param int $int_flags
      * @return self
      */
     public function setFlags($int_flags)
