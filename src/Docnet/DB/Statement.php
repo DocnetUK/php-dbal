@@ -339,7 +339,19 @@ class Statement
         /** @var  $obj_result \mysqli_result */
         $obj_result = $this->obj_stmt->get_result();
         if (is_bool($obj_result)) {
-            throw new \RuntimeException('mysqli_stmt result is boolean instead of mysqli_result');
+            $error_info = $this->obj_stmt->error ?: 'Unknown error';
+            $error_code = $this->obj_stmt->errno;
+            $sql_state = $this->obj_stmt->sqlstate ?: 'Unknown';
+
+            throw new \RuntimeException(
+                sprintf(
+                    'mysqli_stmt->get_result() failed: %s (Error Code: %d, SQL State: %s). Expected mysqli_result but got boolean.',
+                    $error_info,
+                    $error_code,
+                    $sql_state
+                ),
+                $error_code
+            );
         }
 
         if (DB::FETCH_MODE_ONE === $int_fetch_mode) {
