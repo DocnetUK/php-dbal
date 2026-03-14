@@ -332,11 +332,16 @@ class Statement
      *
      * @param $int_fetch_mode
      * @return array|object|\stdClass
+     * @throws \RuntimeException
      */
     private function fetchNative($int_fetch_mode)
     {
         /** @var  $obj_result \mysqli_result */
         $obj_result = $this->obj_stmt->get_result();
+        if (is_bool($obj_result)) {
+            throw new \RuntimeException('mysqli_stmt result is boolean instead of mysqli_result');
+        }
+
         if (DB::FETCH_MODE_ONE === $int_fetch_mode) {
             if ($this->str_result_class) {
                 $mix_data = $obj_result->fetch_object($this->str_result_class);
