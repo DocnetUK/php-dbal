@@ -332,6 +332,7 @@ class Statement
      *
      * @param $int_fetch_mode
      * @return array|object|\stdClass
+     * @throws \RuntimeException
      */
     private function fetchNative($int_fetch_mode)
     {
